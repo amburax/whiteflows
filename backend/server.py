@@ -69,9 +69,9 @@ async def add_cache_control_header(request: Request, call_next):
 # Format: {ip: [timestamp1, timestamp2, ...]}
 _rate_limits = {}
 
-def check_rate_limit(ip: str, limit: int = 5, window: int = 60):
+def check_rate_limit(ip: str, limit: int = 3, window: int = 3600):
     """
-    Simple in-memory rate limiter.
+    Stricter in-memory rate limiter (Default: 3 per hour).
     Returns True if allowed, raises HTTPException if limit exceeded.
     """
     now = datetime.now().timestamp()
@@ -84,7 +84,10 @@ def check_rate_limit(ip: str, limit: int = 5, window: int = 60):
     
     if len(_rate_limits[ip]) >= limit:
         log(f"[SECURITY] Rate limit exceeded for IP: {ip}")
-        raise HTTPException(status_code=429, detail="Too many requests. Please wait a minute before submitting again.")
+        raise HTTPException(
+            status_code=429, 
+            detail="Rate limit exceeded. You can only send 3 submissions per hour. Please try again later."
+        )
     
     _rate_limits[ip].append(now)
     return True
