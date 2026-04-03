@@ -1,0 +1,25 @@
+﻿# Environments
+.venv/
+.env
+backend/.env
+frontend/.env
+*.pyc
+__pycache__/
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Test Data (Leads & Applications)
+backend/leads/
+backend/applications/
+leads/
+applications/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
