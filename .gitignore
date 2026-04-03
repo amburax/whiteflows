@@ -1,19 +1,9 @@
 ﻿# Environments
-.venv/
 .env
-backend/.env
-frontend/.env
 *.pyc
 __pycache__/
 
-# Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-
-# Test Data (Leads & Applications)
-backend/leads/
-backend/applications/
+# Test Data
 leads/
 applications/
 

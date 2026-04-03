@@ -1,4 +1,4 @@
-"""
+﻿"""
 WhiteFlows Application Server - FastAPI Edition
 Modern async server with uvicorn for better performance and error handling
 """
@@ -595,7 +595,7 @@ import shutil
 @app.get("/", response_class=HTMLResponse)
 async def serve_homepage():
     """Serve the main HTML file"""
-    html_file = BASE_DIR / "whiteflows.html"
+    html_file = BASE_DIR / "index.html"
     if not html_file.exists():
         raise HTTPException(status_code=404, detail="HTML file not found")
     return FileResponse(html_file, headers={"Cache-Control": "public, max-age=3600"})
