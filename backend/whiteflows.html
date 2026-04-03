@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Google tag (gtag.js) - GA4 Tracking -->
-  <!-- TODO: Replace G-XXXXXXXXXX with your actual GA4 Measurement ID -->
+  <!-- ⚠️ ATTENTION: Replace G-XXXXXXXXXX with your real tracking ID before live deployment ⚠️ -->
   <!-- Get your ID from: https://analytics.google.com/analytics/web/ -->
   <!-- GA4 disabled: placeholder ID removed to avoid blocking network request -->
   <!-- Uncomment with your real GA4 ID:
@@ -3744,7 +3744,7 @@ nav.scrolled .nav-links a:hover {
 
 <!-- ══ NAV ══ -->
 <nav id="mainNav" class="page-entrance">
-  <a href="#" class="nav-logo">
+  <a href="#" class="nav-logo" title="Back to Top" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;">
     <img src="static/images/asset_10.webp" alt="WhiteFlows International" fetchpriority="high">
   </a>
   <div class="nav-links">
@@ -4533,32 +4533,32 @@ nav.scrolled .nav-links a:hover {
         </div>
         <div class="news-list" id="newsList">
           <!-- Demo news cards -->
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">Reuters India <span class="news-card-sentiment sent-positive">Bullish</span></div>
             <div class="news-card-headline">Adani Group stocks rally 4% on infrastructure deal with sovereign wealth fund</div>
             <div class="news-card-meta">1h ago · WhiteFlows Intelligence</div>
           </a>
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">Bloomberg Quint <span class="news-card-sentiment sent-negative">Bearish</span></div>
             <div class="news-card-headline">IT sector faces headwinds as US clients defer spending amid macro uncertainty</div>
             <div class="news-card-meta">2h ago · WhiteFlows Intelligence</div>
           </a>
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">CNBC TV18 <span class="news-card-sentiment sent-positive">Bullish</span></div>
             <div class="news-card-headline">Gold prices touch ₹63,200 per 10g on safe-haven demand and weak dollar</div>
             <div class="news-card-meta">3h ago · WhiteFlows Intelligence</div>
           </a>
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">Financial Express <span class="news-card-sentiment sent-positive">Bullish</span></div>
             <div class="news-card-headline">RBI keeps repo rate unchanged at 6.5%; GDP forecast revised upward to 7.2%</div>
             <div class="news-card-meta">4h ago · WhiteFlows Intelligence</div>
           </a>
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">Economic Times <span class="news-card-sentiment sent-neutral">Neutral</span></div>
             <div class="news-card-headline">SEBI introduces new framework for algorithmic trading by retail investors</div>
             <div class="news-card-meta">5h ago · WhiteFlows Intelligence</div>
           </a>
-          <a class="news-card" href="#" target="_blank">
+          <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
             <div class="news-card-source">Mint <span class="news-card-sentiment sent-positive">Bullish</span></div>
             <div class="news-card-headline">Mutual fund SIP inflows cross ₹20,000 crore for third consecutive month</div>
             <div class="news-card-meta">6h ago · WhiteFlows Intelligence</div>
@@ -6998,7 +6998,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     if (!list) return;
     const picked = shuffle(NEWS_POOL).slice(0, 6);
     list.innerHTML = picked.map(n => `
-      <a class="news-card" href="#" target="_blank">
+      <a class="news-card" href="https://www.google.com/search?q=latest+financial+news+india" target="_blank">
         <div class="news-card-source">${n.source} <span class="news-card-sentiment ${n.sentiment}">${n.label}</span></div>
         <div class="news-card-headline">${n.headline}</div>
         <div class="news-card-meta">${buildAge(n.age)} &middot; WhiteFlows Intelligence</div>
