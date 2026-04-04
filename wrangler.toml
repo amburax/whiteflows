@@ -1,0 +1,9 @@
+name = "whiteflows-api"
+  main = "server.py"
+  compatibility_date = "2024-04-01"
+  compatibility_flags = ["python_workers"]
+
+  # Set these via: wrangler secret put GMAIL_SENDER
+  # and:          wrangler secret put GMAIL_PASSWORD
+  # and:          wrangler secret put GMAIL_RECEIVER
+  

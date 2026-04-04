@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <!-- Google tag (gtag.js) - GA4 Tracking -->
@@ -1573,18 +1573,19 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 .fsubmit:hover { background:var(--gold-lt); }
 
 /* Premium Loading States */
-.loading { pointer-events: none; position: relative; transition: all 0.3s ease; }
-.loading > *:not(.loading-spinner) { opacity: 0.15; filter: blur(1px); }
+.loading { pointer-events: none !important; position: relative !important; }
+.loading > * { opacity: 0 !important; filter: blur(2px); transition: opacity 0.2s; }
 .loading::after {
   content: "";
-  position: absolute; width: 22px; height: 22px;
-  top: 0; left: 0; right: 0; bottom: 0;
-  margin: auto;
-  border: 3px solid rgba(212, 168, 83, 0.2);
-  border-top-color: var(--gold);
+  position: absolute; 
+  width: 24px; height: 24px;
+  top: 50%; left: 50%;
+  margin-top: -12px; margin-left: -12px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
-  animation: wfSpin 0.8s linear infinite;
-  z-index: 10;
+  animation: wfSpin 0.7s linear infinite;
+  z-index: 1000;
 }
 @keyframes wfSpin { to { transform: rotate(360deg); } }
 .fnote {
@@ -3642,7 +3643,7 @@ nav.scrolled .nav-links a:hover {
   }
   .reg-submit-btn:hover{background:linear-gradient(135deg,#E2B860,#D4A030);transform:translateY(-2px);box-shadow:0 7px 22px rgba(212,168,83,0.45);}
   .reg-submit-btn:disabled{background:#C0B49A;cursor:not-allowed;transform:none;box-shadow:none;}
-  .reg-submit-btn.loading{opacity:0.7;cursor:not-allowed;pointer-events:none;}
+  .reg-submit-btn.loading{ cursor:not-allowed; }
   .reg-disclaimer{font-size:0.7rem;color:#B0A090;text-align:center;margin-top:14px;line-height:1.55;}
 
   /* Success */
@@ -4793,7 +4794,7 @@ nav.scrolled .nav-links a:hover {
           </select>
         </div>
         <div id="r-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
-        <button class="fsubmit" onclick="submitRetail()">Request Consultation →</button>
+        <button class="fsubmit" onclick="submitRetail()">Request Consultation &rarr;</button>
         <div class="fnote">Strictly confidential · Never shared · No spam</div>
       </div>
       <!-- Thank You Screen — Retail -->
@@ -4863,7 +4864,7 @@ nav.scrolled .nav-links a:hover {
           </div>
         </div>
         <div id="p-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
-        <button class="fsubmit" onclick="submitProject()">Submit Proposal →</button>
+        <button class="fsubmit" onclick="submitProject()">Submit Proposal &rarr;</button>
       </div>
       <!-- Thank You Screen — Project -->
       <div class="form-success" id="success-project">
@@ -4925,7 +4926,7 @@ nav.scrolled .nav-links a:hover {
           <input type="file" id="s-proposal" class="finput" style="padding-top:10px;">
         </div>
         <div id="s-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
-        <button class="fsubmit" onclick="submitScale()">Submit for Scaling →</button>
+        <button class="fsubmit" onclick="submitScale()">Submit for Scaling &rarr;</button>
       </div>
       <div class="form-success" id="success-scale">
         <div class="success-tick">✓</div>
@@ -4992,7 +4993,7 @@ nav.scrolled .nav-links a:hover {
           <input type="text" id="o-interest-other" class="finput">
         </div>
         <div id="o-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
-        <button class="fsubmit" onclick="submitOcean()">Explore The Ocean →</button>
+        <button class="fsubmit" onclick="submitOcean()">Explore The Ocean &rarr;</button>
       </div>
       <div class="form-success" id="success-ocean">
         <div class="success-tick">✓</div>
@@ -5050,7 +5051,7 @@ nav.scrolled .nav-links a:hover {
           </div>
         </div>
         <div id="i-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
-        <button class="fsubmit" onclick="submitInstitutional()">Request Private Consultation →</button>
+        <button class="fsubmit" onclick="submitInstitutional()">Request Private Consultation &rarr;</button>
         <div class="fnote">Strictly confidential · NDA available upon request</div>
       </div>
       <!-- Thank You Screen — Institutional -->
@@ -5108,6 +5109,18 @@ nav.scrolled .nav-links a:hover {
     <div class="footer-copy">© <span id="copyrightYear"></span> WhiteFlows International · Gujarat, India · All Rights Reserved</div>
   </div>
 </footer>
+
+<!-- ══ SECURITY MODAL ══ -->
+<div id="secOverlay" class="sec-modal-overlay">
+  <div class="sec-modal">
+    <div class="sec-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+    </div>
+    <div id="secTitle" class="sec-title">Security Check</div>
+    <div id="secMsg" class="sec-message">Your request could not be processed at this time.</div>
+    <button class="sec-btn" onclick="closeSecurityModal()">Understood</button>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════
@@ -5458,6 +5471,11 @@ function resetForm(type) {
     // Reset any select to first option
     panel.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
     panel.style.display = '';
+    // Clear loading state from any submit button in this panel
+    panel.querySelectorAll('.fsubmit, .reg-submit-btn').forEach(btn => {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    });
   }
 }
 
@@ -5489,18 +5507,17 @@ function doSendWhatsApp() {
 }
 
 /* User chose Email - sends via server */
-function doSendEmail() {
+function doSendEmail(customBtn) {
   if (!_pendingEmailData) return;
   
   var formType   = _pendingFormType;
   var emailData  = _pendingEmailData;
 
-  const btn = document.querySelector('.send-btn-email');
+  // Target the provided button or fall back to the Lead Modal button
+  const btn = customBtn || document.querySelector('.send-btn-email');
   if (btn) {
     btn.disabled = true;
     btn.classList.add('loading');
-    const label = btn.querySelector('.send-btn-label');
-    if (label) label.textContent = 'Processing...';
   }
 
   var leadUrl = (window.location.protocol === 'file:') ? 'http://localhost:8001/submit-lead' : '/submit-lead';
@@ -5521,7 +5538,15 @@ function doSendEmail() {
   })
   .catch(function(err) {
     console.error('Lead email error:', err);
-    showToast('Submission failed: ' + err.message + '. Ensure server is running on 8001.');
+    
+    var isRateLimit = err.message.includes('429');
+    var title = isRateLimit ? 'Security Limit Reached' : 'Connection Error';
+    var msg = isRateLimit 
+      ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.'
+      : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
+    
+    showSecurityModal(title, msg);
+    
     // Reset button state on error
     if (btn) {
       btn.disabled = false;
@@ -5530,6 +5555,24 @@ function doSendEmail() {
       if (label) label.textContent = 'Email';
     }
   });
+}
+
+function showSecurityModal(title, message) {
+  var overlay = document.getElementById('secOverlay');
+  var titleEl = document.getElementById('secTitle');
+  var msgEl   = document.getElementById('secMsg');
+  if (!overlay || !titleEl || !msgEl) return;
+  
+  titleEl.textContent = title;
+  msgEl.textContent   = message;
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSecurityModal() {
+  var overlay = document.getElementById('secOverlay');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -5643,7 +5686,8 @@ Submitted via WhiteFlows Website`);
     objective: obj,
     body: decodeURIComponent(_pendingEmail) 
   };
-  doSendEmail();
+  const btn = document.querySelector('#tab-retail .fsubmit');
+  doSendEmail(btn);
 }
 
 /* ── PROJECT FUNDING FORM ── */
@@ -5725,7 +5769,8 @@ Submitted via WhiteFlows Website`);
     purpose: purpose,
     body: decodeURIComponent(_pendingEmail)
   };
-  doSendEmail();
+  const btn = document.querySelector('#tab-project .fsubmit');
+  doSendEmail(btn);
 }
 
 /* ── READY TO SCALE FORM ── */
@@ -5775,8 +5820,8 @@ function submitScale() {
   // Disable button while processing
   const scaleBtn = document.querySelector('#tab-scale .fsubmit');
   if (scaleBtn) {
+    scaleBtn.classList.add('loading');
     scaleBtn.disabled = true;
-    scaleBtn.textContent = 'Processing...';
   }
 
   // Read the file as base64 then submit
@@ -5831,12 +5876,12 @@ Submitted via WhiteFlows Website`);
         }
       }
     };
-    doSendEmail();
+    doSendEmail(scaleBtn);
 
     // Re-enable button after sending
     if (scaleBtn) {
+      scaleBtn.classList.remove('loading');
       scaleBtn.disabled = false;
-      scaleBtn.textContent = 'Submit for Scaling \u2192';
     }
   };
 
@@ -5927,7 +5972,8 @@ Submitted via WhiteFlows Website`);
     interest: interest,
     body: decodeURIComponent(_pendingEmail)
   };
-  doSendEmail();
+  const btn = document.querySelector('#tab-ocean .fsubmit');
+  doSendEmail(btn);
 }
 
 /* ── INSTITUTIONAL FORM ── */
@@ -5989,7 +6035,8 @@ Submitted via WhiteFlows Website`);
     aum_range: aum,
     body: decodeURIComponent(_pendingEmail)
   };
-  doSendEmail();
+  const btn = document.querySelector('#tab-institutional .fsubmit');
+  doSendEmail(btn);
 }
 
 // ── Dynamic copyright year ──────────────────────────────────
@@ -7485,12 +7532,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
   }
 
   function _setBtnState(loading) {
-    var btn = document.querySelector('.reg-submit-btn');
+    var btn = document.getElementById('regSubmitBtn') || document.querySelector('.reg-btn-submit');
     if (!btn) return;
     btn.disabled = loading;
     if (loading) btn.classList.add('loading'); else btn.classList.remove('loading');
-    var txtEl = btn.querySelector('.reg-submit-text');
-    if (txtEl) txtEl.textContent = loading ? 'Processing...' : 'Submit Application';
   }
 
   function updateRegProgress() {
@@ -7649,7 +7694,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
         .catch(function(err) {
           _setBtnState(false);
           console.error('EmailJS error:', err);
-          showToast('Could not send automatically — please email us at abbas.gemi@gmail.com');
+          showSecurityModal('Connection Error', 'Could not send automatically — please email us at abbas.gemi@gmail.com');
         });
       return;
     }
@@ -7678,25 +7723,21 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     .then(function(data) {
       _setBtnState(false);
       if (data.success) { _showSuccess(name); }
-      else { alert('Application saved but email failed: ' + (data.error || 'Unknown')); }
+      else { showSecurityModal('Submission Error', 'Application saved but email failed: ' + (data.error || 'Unknown')); }
     })
     .catch(function(err) {
       _setBtnState(false);
       console.error('Submission error:', err);
-      var msg = 'Could not connect to the server (' + err.message + ').\n\n';
-      if (window.location.protocol === 'file:') {
-        msg += '1. Make sure "python server.py" is running.\n';
-        msg += '2. Try opening http://localhost:8001 in your browser instead.';
-      } else {
-        msg += 'Please check if the server is running on port 8001 or configure EmailJS.';
-      }
-      alert(msg);
+      
+      var isRateLimit = err.message.includes('429');
+      var title = isRateLimit ? 'Security Limit Reached' : 'Connection Error';
+      var msg = isRateLimit 
+        ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.'
+        : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
+      
+      showSecurityModal(title, msg);
     });
     return;
-
-    /* ── Last resort: show setup notice ── */
-    _setBtnState(false);
-    showToast('Email setup incomplete. Please configure EmailJS keys to send emails.');
   }
 
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeRegModal(); });
@@ -7786,6 +7827,46 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
   .wa-text { display: none; }
   .wa-icon { margin-right: 0; }
 }
+
+/* ══ SECURITY WARNING MODAL ══ */
+.sec-modal-overlay {
+  position: fixed; inset: 0; background: rgba(14,13,11,0.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+}
+.sec-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.sec-modal {
+  background: var(--ink); border: 1px solid var(--gold);
+  width: 90%; max-width: 440px; padding: 48px 40px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 20px rgba(212,168,83,0.15);
+  transform: translateY(20px); transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.sec-modal-overlay.active .sec-modal { transform: translateY(0); }
+.sec-icon {
+  width: 64px; height: 64px; margin: 0 auto 28px;
+  border: 1px solid var(--gold-thin); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold); background: rgba(212,168,83,0.05);
+}
+.sec-title {
+  font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: 16px;
+}
+.sec-message {
+  font-family: 'Raleway', sans-serif; font-size: 14px; font-weight: 500;
+  line-height: 1.8; color: rgba(248,247,243,0.7); margin-bottom: 32px;
+}
+.sec-btn {
+  display: inline-block; padding: 12px 32px;
+  background: var(--gold); color: var(--ink);
+  font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 0.3s;
+}
+.sec-btn:hover { background: #fff; transform: translateY(-2px); }
 </style>
 
 <script>

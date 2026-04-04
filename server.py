@@ -1,12 +1,14 @@
-﻿"""
-WhiteFlows Application Server - FastAPI Edition
-Modern async server with uvicorn for better performance and error handling
+"""
+WhiteFlows Application Server - Cloudflare Workers Edition
+Fully stateless: no file writes, no threading. 
+Generates PDFs in memory and sends them directly via email.
 """
 
 import os
+import io
 import json
+import time
 from typing import Optional
-import threading
 import smtplib
 from pathlib import Path
 from datetime import datetime
@@ -14,11 +16,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from email.mime.application import MIMEApplication
 from fpdf import FPDF
 
 import traceback
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -32,13 +35,11 @@ GMAIL_SENDER = os.environ.get('GMAIL_SENDER', 'your-email@gmail.com')
 GMAIL_PASSWORD = os.environ.get('GMAIL_PASSWORD', 'your-app-password')
 GMAIL_RECEIVER = os.environ.get('GMAIL_RECEIVER', 'recipient-email@gmail.com')
 
-# Setup paths
+# Setup paths (for static assets only - no file writing)
 BASE_DIR = Path(__file__).parent
-APPLICATIONS_DIR = BASE_DIR / "applications"
-APPLICATIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # FastAPI app instance
-app = FastAPI(title="WhiteFlows", version="2.0")
+app = FastAPI(title="WhiteFlows", version="3.0-cloudflare")
 
 # CORS middleware
 app.add_middleware(
@@ -49,232 +50,90 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gzip middleware for better performance
+# Gzip middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Caching middleware for static assets
+# Cache headers middleware
 @app.middleware("http")
 async def add_cache_control_header(request: Request, call_next):
     response = await call_next(request)
     if request.url.path.startswith("/static"):
-        # Cache static assets for 1 year
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif request.url.path == "/":
-        # Cache HTML for 1 hour
         response.headers["Cache-Control"] = "public, max-age=3600"
     return response
 
 
-# Rate limiting state (in-memory)
-# Format: {ip: [timestamp1, timestamp2, ...]}
+# In-memory rate limiting
 _rate_limits = {}
 
-def check_rate_limit(ip: str, limit: int = 3, window: int = 3600):
-    """
-    Stricter in-memory rate limiter (Default: 3 per hour).
-    Returns True if allowed, raises HTTPException if limit exceeded.
-    """
-    now = datetime.now().timestamp()
+def check_rate_limit(ip: str, limit: int = 10, window: int = 3600):
+    now = time.time()
     if ip not in _rate_limits:
         _rate_limits[ip] = [now]
         return True
-    
-    # Filter timestamps within the window
     _rate_limits[ip] = [t for t in _rate_limits[ip] if now - t < window]
-    
     if len(_rate_limits[ip]) >= limit:
         log(f"[SECURITY] Rate limit exceeded for IP: {ip}")
         raise HTTPException(
-            status_code=429, 
-            detail="Rate limit exceeded. You can only send 3 submissions per hour. Please try again later."
+            status_code=429,
+            detail="Rate limit exceeded. You can only send 10 submissions per hour. Please try again later."
         )
-    
     _rate_limits[ip].append(now)
     return True
 
 
-# Mount static files directory for downloads
+# Mount static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-# Logging function
+
 def log(message: str):
-    """Log messages with timestamp"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{timestamp}] {message}")
-    
-    # Also write to log file
-    log_file = BASE_DIR / "server.log"
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(f"[{timestamp}] {message}\n")
 
 
-def send_client_confirmation_email(client_email: str, client_name: str, app_id: Optional[str] = None, receipt_path: Optional[Path] = None):
+def create_pdf_in_memory(record: dict) -> bytes:
     """
-    Send auto-reply confirmation email to client
-    """
-    if GMAIL_PASSWORD == "YOUR_APP_PASSWORD_HERE":
-        log(f"  CLIENT EMAIL SKIPPED — Gmail App Password not configured")
-        return
-    
-    def _send():
-        try:
-            # Premium brand colors
-            INK = "#1A1714"
-            GOLD = "#D4A853"
-            PEARL = "#FDFCF9"
-            GOLD_LT = "#E8C88A"
-
-            # Build HTML confirmation email
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: {PEARL}; margin:0; padding:20px; color: {INK}; }}
-                    .wrapper {{ max-width: 600px; margin: auto; background: #FFF; border: 1px solid {GOLD}; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }}
-                    .header {{ background: {INK}; padding: 40px 20px; text-align: center; border-bottom: 3px solid {GOLD}; }}
-                    .header h1 {{ color: {GOLD}; margin: 0; font-size: 28px; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; }}
-                    .header p {{ color: {GOLD_LT}; margin: 8px 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; }}
-                    .content {{ padding: 50px 40px; line-height: 1.8; }}
-                    .content h2 {{ color: {INK}; font-size: 20px; margin-top: 0; letter-spacing: 0.5px; }}
-                    .message {{ font-size: 15px; color: #444; margin-bottom: 25px; }}
-                    .cta-box {{ background: {PEARL}; border: 1px solid rgba(212,168,83,0.15); padding: 25px; border-radius: 4px; margin: 30px 0; }}
-                    .footer {{ background: #F9F9F9; padding: 30px; border-top: 1px solid #EEE; text-align: center; }}
-                    .footer p {{ color: #999; font-size: 10px; margin: 5px 0; letter-spacing: 1px; text-transform: uppercase; }}
-                    .sebi-tag {{ display: inline-block; padding: 4px 12px; border: 1px solid rgba(0,0,0,0.1); margin-top: 15px; font-size: 9px; color: #777; }}
-                </style>
-            </head>
-            <body>
-                <div class="wrapper">
-                    <div class="header">
-                        <h1>WhiteFlows</h1>
-                        <p>A Legacy of 37 Years in Wealth Creation</p>
-                    </div>
-                    <div class="content">
-                        <h2>Dear {client_name},</h2>
-                        <div class="message">
-                            <p>Thank you for choosing WhiteFlows International. We have successfully received your application and documents for review.</p>
-                            <p>Our advisory team has been notified and will conduct a thorough assessment of your submission. You can expect a response within **1-2 business days**.</p>
-                        </div>
-                        <div class="cta-box">
-                            <table width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td style="color:{GOLD}; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:10px;">Next Steps</td>
-                                </tr>
-                                <tr>
-                                    <td style="color:#666; font-size:13px;">Our compliance desk will verify the uploaded KYC documents. Once approved, you will receive your personalized investment mandate.</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <p style="margin-top:40px; font-size:14px; color:{INK};">
-                            Best regards,<br/>
-                            <strong style="color:{GOLD};">WhiteFlows Management</strong>
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p>© 2026 WHITEFLOWS INTERNATIONAL. ALL RIGHTS RESERVED.</p>
-                        <div class="sebi-tag">SEBI REGISTERED INVESTMENT ADVISORY</div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Build MIME message
-            msg = MIMEMultipart()
-            msg["Subject"] = "Application Received - WhiteFlows International"
-            msg["From"] = GMAIL_SENDER
-            msg["To"] = client_email
-            msg["Reply-To"] = GMAIL_RECEIVER
-            
-            # Attach HTML body
-            msg.attach(MIMEText(html_body, "html"))
-
-            # Attach PDF Receipt if provided
-            if receipt_path and receipt_path.exists():
-                try:
-                    with open(receipt_path, "rb") as attachment:
-                        part = MIMEBase("application", "octet-stream")
-                        part.set_payload(attachment.read())
-                    
-                    encoders.encode_base64(part)
-                    part.add_header(
-                        "Content-Disposition",
-                        f"attachment; filename=WhiteFlows_Receipt_{app_id}.pdf"
-                    )
-                    msg.attach(part)
-                    log(f"  [OK] PDF Receipt attached to client email ({app_id})")
-                except Exception as e:
-                    log(f"  [ERROR] Failed to attach PDF to client email: {e}")
-            
-            # Send via Gmail SMTP
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-                smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
-                smtp.sendmail(GMAIL_SENDER, client_email, msg.as_bytes())
-            
-            log(f"  [OK] CLIENT CONFIRMATION EMAIL SENT to {client_email}")
-            
-        except smtplib.SMTPAuthenticationError as e:
-            log(f"  CLIENT EMAIL FAILED — SMTP Authentication Error: {e}")
-            log(f"  -> Check Gmail App Password at: https://myaccount.google.com/apppasswords")
-        except smtplib.SMTPException as e:
-            log(f"  CLIENT EMAIL FAILED — SMTP Error: {e}")
-        except Exception as ex:
-            log(f"  CLIENT EMAIL FAILED — {type(ex).__name__}: {ex}")
-    
-    # Run in background
-    log(f"  Sending confirmation email to client: {client_email}")
-    t = threading.Thread(target=_send, daemon=True)
-    t.start()
-
-
-def create_pdf_receipt(record: dict, output_path: Path):
-    """
-    Generates a branded PDF receipt for the application
+    Generates a branded PDF receipt entirely in memory.
+    Returns raw PDF bytes — no file is saved to disk.
     """
     try:
         pdf = FPDF()
         pdf.add_page()
-        
-        # Colors (Ink & Gold)
+
+        # Colors
         INK = (14, 13, 11)
         GOLD = (212, 168, 83)
         IVORY = (248, 247, 243)
-        
+
         # Background
         pdf.set_fill_color(*IVORY)
         pdf.rect(0, 0, 210, 297, 'F')
-        
-        # Header Border
+
+        # Header borders
         pdf.set_draw_color(*GOLD)
         pdf.line(10, 10, 200, 10)
         pdf.line(10, 50, 200, 50)
-        
-        # Logo (if possible)
+
+        # Logo
         logo_path = BASE_DIR / "static" / "images" / "asset_10.png"
         if logo_path.exists():
             pdf.image(str(logo_path), x=10, y=15, h=25)
-        
+
         # Title
         pdf.set_font("Helvetica", "B", 24)
         pdf.set_text_color(*GOLD)
         pdf.cell(0, 40, "CERTIFICATE OF APPLICATION", ln=True, align="R")
-        
+
         pdf.ln(20)
-        
-        # Main Body
+
+        # Details table
         pdf.set_font("Helvetica", "", 12)
         pdf.set_text_color(*INK)
-        
-        pdf.cell(0, 10, f"Application ID: {record['app_id']}", ln=True)
+        pdf.cell(0, 10, f"Application ID: {record.get('app_id', 'N/A')}", ln=True)
         pdf.cell(0, 10, f"Date: {datetime.now().strftime('%d %B %Y, %H:%M')}", ln=True)
         pdf.ln(10)
-        
-        # Table of Details
-        pdf.set_fill_color(255, 255, 255)
-        pdf.set_draw_color(230, 230, 230)
-        
+
         details = [
             ("Portfolio Choice", record.get("portfolio", "N/A")),
             ("Applicant Name", record.get("applicant_name", "N/A")),
@@ -283,7 +142,9 @@ def create_pdf_receipt(record: dict, output_path: Path):
             ("Nominee Name", record.get("nominee_name", "N/A")),
             ("Nominee PAN", record.get("nominee_pan", "N/A"))
         ]
-        
+
+        pdf.set_fill_color(255, 255, 255)
+        pdf.set_draw_color(230, 230, 230)
         for label, val in details:
             pdf.set_font("Helvetica", "B", 10)
             pdf.set_text_color(120, 120, 120)
@@ -291,558 +152,410 @@ def create_pdf_receipt(record: dict, output_path: Path):
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(*INK)
             pdf.cell(0, 12, str(val), border=1, ln=True, fill=True)
-            
+
         pdf.ln(20)
-        
-        # Compliance Text
+
+        # Compliance footer
         pdf.set_font("Helvetica", "I", 9)
         pdf.set_text_color(150, 150, 150)
-        pdf.multi_cell(0, 5, "This is a computer-generated confirmation of your application to WhiteFlows International. Our advisory desk will review your documents and verify your identity within 24 working hours. Your investment journey is backed by 13+ years of market mastery and SEBI-registered ethics.")
-        
-        # Footer
-        pdf.set_y(-30)
-        pdf.set_font("Helvetica", "B", 10)
+        pdf.multi_cell(0, 5,
+            "This is a computer-generated confirmation of your application to WhiteFlows International. "
+            "Our advisory desk will review your documents and verify your identity within 24 working hours. "
+            "SEBI Registered Investment Advisory."
+        )
+
+        # Footer line
+        pdf.line(10, 280, 200, 280)
+        pdf.set_font("Helvetica", "B", 9)
         pdf.set_text_color(*GOLD)
-        pdf.cell(0, 10, "SAFE . SECURE . TRANSPARENT", ln=True, align="C")
-        pdf.set_font("Helvetica", "", 8)
-        pdf.set_text_color(180, 180, 180)
-        pdf.cell(0, 5, "WhiteFlows International | SEBI Reg: INA0000123456", ln=True, align="C")
+        pdf.set_y(282)
+        pdf.cell(0, 5, "WHITEFLOWS INTERNATIONAL — SEBI REGISTERED INVESTMENT ADVISORY", align="C")
+
+        # Return PDF as bytes — key change: dest='S' keeps it in memory
+        pdf_bytes = pdf.output(dest='S')
+        if isinstance(pdf_bytes, str):
+            return pdf_bytes.encode('latin-1')
+        return bytes(pdf_bytes)
+
+    except Exception as ex:
+        log(f"[ERROR] PDF generation failed: {ex}")
+        return b""
+
+
+async def send_admin_email(record: dict, pdf_bytes: bytes, uploaded_docs: dict):
+    """
+    Send application notification to admin with PDF receipt and uploaded documents.
+    Everything stays in memory — no files are written to disk.
+    """
+    if GMAIL_PASSWORD == "your-app-password":
+        log("  ADMIN EMAIL SKIPPED — Gmail not configured")
+        return
+
+    try:
+        app_id = record.get("app_id", "UNKNOWN")
+        msg = MIMEMultipart()
+        msg["Subject"] = f"NEW APPLICATION — {record.get('applicant_name', 'Unknown')} [{app_id}]"
+        msg["From"] = GMAIL_SENDER
+        msg["To"] = GMAIL_RECEIVER
+
+        # HTML body for admin
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+            <h2 style="color:#D4A853;">New WhiteFlows Application Received</h2>
+            <table style="border-collapse:collapse;width:100%;">
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">App ID</td><td style="padding:8px;border:1px solid #eee;">{app_id}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Applicant</td><td style="padding:8px;border:1px solid #eee;">{record.get("applicant_name","")}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Email</td><td style="padding:8px;border:1px solid #eee;">{record.get("email","")}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Mobile</td><td style="padding:8px;border:1px solid #eee;">{record.get("mobile","")}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Portfolio</td><td style="padding:8px;border:1px solid #eee;">{record.get("portfolio","")}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Nominee</td><td style="padding:8px;border:1px solid #eee;">{record.get("nominee_name","")} (PAN: {record.get("nominee_pan","")})</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee;font-weight:bold;">Timestamp</td><td style="padding:8px;border:1px solid #eee;">{datetime.now().strftime('%d %B %Y, %H:%M:%S')}</td></tr>
+            </table>
+        </div>
+        """
+        msg.attach(MIMEText(html, "html"))
+
+        # Attach PDF receipt
+        if pdf_bytes:
+            part = MIMEApplication(pdf_bytes, _subtype="pdf")
+            part.add_header("Content-Disposition", "attachment", filename=f"Receipt_{app_id}.pdf")
+            msg.attach(part)
+
+        # Attach uploaded documents (in memory)
+        for filename, file_bytes in uploaded_docs.items():
+            if file_bytes:
+                doc_part = MIMEApplication(file_bytes)
+                doc_part.add_header("Content-Disposition", "attachment", filename=filename)
+                msg.attach(doc_part)
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
+            smtp.sendmail(GMAIL_SENDER, GMAIL_RECEIVER, msg.as_bytes())
+
+        log(f"  [OK] ADMIN EMAIL SENT — {app_id}")
+
+    except Exception as ex:
+        log(f"  [ERROR] Admin email failed: {type(ex).__name__}: {ex}")
+        raise
+
+
+async def send_client_email(client_email: str, client_name: str, app_id: str, pdf_bytes: bytes):
+    """
+    Send confirmation email to client with their PDF receipt.
+    Everything in memory.
+    """
+    if not client_email or GMAIL_PASSWORD == "your-app-password":
+        log("  CLIENT EMAIL SKIPPED — Config or email missing")
+        return
+
+    try:
+        INK = "#1A1714"
+        GOLD = "#D4A853"
+        PEARL = "#FDFCF9"
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="font-family:Arial,sans-serif;background:{PEARL};margin:0;padding:20px;color:{INK};">
+            <div style="max-width:600px;margin:auto;background:#fff;border:1px solid {GOLD};border-radius:4px;overflow:hidden;">
+                <div style="background:{INK};padding:40px 20px;text-align:center;border-bottom:3px solid {GOLD};">
+                    <h1 style="color:{GOLD};margin:0;font-size:28px;letter-spacing:4px;text-transform:uppercase;">WhiteFlows</h1>
+                    <p style="color:#E8C88A;margin:8px 0 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;">A Legacy of 37 Years in Wealth Creation</p>
+                </div>
+                <div style="padding:50px 40px;line-height:1.8;">
+                    <h2 style="color:{INK};font-size:20px;margin-top:0;">Dear {client_name},</h2>
+                    <p style="font-size:15px;color:#444;">Thank you for choosing WhiteFlows International. We have successfully received your application and documents for review.</p>
+                    <p style="font-size:15px;color:#444;">Our advisory team has been notified and will conduct a thorough assessment of your submission. You can expect a response within <strong>1-2 business days</strong>.</p>
+                    <div style="background:{PEARL};border:1px solid rgba(212,168,83,0.15);padding:25px;border-radius:4px;margin:30px 0;">
+                        <p style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;">Next Steps</p>
+                        <p style="color:#666;font-size:13px;margin:0;">Our compliance desk will verify the uploaded KYC documents. Once approved, you will receive your personalized investment mandate.</p>
+                    </div>
+                    <p style="margin-top:40px;font-size:14px;color:{INK};">
+                        Best regards,<br/>
+                        <strong style="color:{GOLD};">WhiteFlows Management</strong>
+                    </p>
+                </div>
+                <div style="background:#f9f9f9;padding:30px;border-top:1px solid #eee;text-align:center;">
+                    <p style="color:#999;font-size:10px;margin:5px 0;letter-spacing:1px;text-transform:uppercase;">© 2026 WhiteFlows International. All Rights Reserved.</p>
+                    <span style="display:inline-block;padding:4px 12px;border:1px solid rgba(0,0,0,0.1);font-size:9px;color:#777;">SEBI REGISTERED INVESTMENT ADVISORY</span>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg = MIMEMultipart()
+        msg["Subject"] = "Application Received — WhiteFlows International"
+        msg["From"] = GMAIL_SENDER
+        msg["To"] = client_email
+        msg["Reply-To"] = GMAIL_RECEIVER
+        msg.attach(MIMEText(html, "html"))
+
+        if pdf_bytes:
+            part = MIMEApplication(pdf_bytes, _subtype="pdf")
+            part.add_header("Content-Disposition", "attachment", filename=f"WhiteFlows_Receipt_{app_id}.pdf")
+            msg.attach(part)
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
+            smtp.sendmail(GMAIL_SENDER, client_email, msg.as_bytes())
+
+        log(f"  [OK] CLIENT EMAIL SENT to {client_email}")
+
+    except Exception as ex:
+        log(f"  [ERROR] Client email failed: {type(ex).__name__}: {ex}")
+
+
+import base64
+import re
+
+# ... (rest of imports remain the same)
+
+# ─── Utility: Decode Base64 Data URL ──────────────────────────────────────────
+
+def decode_base64_data_url(data_url: str) -> bytes:
+    """
+    Decodes a standard base64 data URL (e.g. data:image/png;base64,iVBORw0...)
+    Returns the raw bytes.
+    """
+    try:
+        if not data_url or "," not in data_url:
+            return b""
         
-        pdf.output(str(output_path))
-        return True
-    except Exception as e:
-        log(f"  [ERROR] PDF Generation failed: {e}")
-        return False
+        # Split on the first comma
+        header, encoded = data_url.split(",", 1)
+        return base64.b64decode(encoded)
+    except Exception as ex:
+        log(f"[ERROR] Failed to decode base64: {ex}")
+        return b""
 
+import mimetypes
 
-def send_email_with_docs(record, doc_dir):
+# ─── Utility: Get Safe Filename with Extension ──────────────────────────────
+
+def get_safe_filename(doc_info: dict, default_key: str) -> str:
     """
-    Sends admin notification email with application details and attachments
-    Enhanced error logging for better troubleshooting
+    Ensures the filename has a valid extension based on:
+    1. originalName field (sent by some forms)
+    2. name field
+    3. label field
+    4. MIME type (if no extension found)
     """
-    if GMAIL_PASSWORD == "YOUR_APP_PASSWORD_HERE":
-        log("  ADMIN EMAIL SKIPPED — Gmail App Password not configured in .env")
-        log("  -> Set GMAIL_PASSWORD in your .env file")
-        return
+    raw_name = doc_info.get("originalName") or doc_info.get("name") or doc_info.get("label") or f"{default_key}"
     
-    def _send():
-        try:
-            r = record
-            
-            # Build HTML body for admin
-            doc_items = ""
-            for v in r["documents"].values():
-                doc_items += f"""
-                <tr style="border-bottom: 1px solid #F0F0F0;">
-                    <td style="padding: 12px 0; color: #666; width: 40%; font-size: 13px;">{v['label']}</td>
-                    <td style="padding: 12px 0; color: #1A1714; font-size: 13px; font-weight: 600;">{v['filename']}</td>
-                </tr>"""
-            if not doc_items:
-                doc_items = "<tr><td colspan='2' style='color:#999; padding:20px; text-align:center;'>No documents uploaded</td></tr>"
-            
-            # Premium brand colors
-            INK = "#1A1714"
-            GOLD = "#D4A853"
-            PEARL = "#FDFCF9"
-
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: {PEARL}; margin:0; padding:20px; }}
-                    .wrapper {{ max-width: 650px; margin: auto; background: #FFF; border: 1px solid {GOLD}; border-radius: 4px; overflow: hidden; }}
-                    .header {{ background: {INK}; padding: 30px; text-align: center; }}
-                    .header h1 {{ color: {GOLD}; margin: 0; font-size: 22px; letter-spacing: 3px; text-transform: uppercase; }}
-                    .section {{ padding: 40px; }}
-                    .section-h {{ font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: {GOLD}; margin-bottom: 20px; border-bottom: 1px solid rgba(212,168,83,0.2); padding-bottom: 8px; }}
-                    .data-table {{ width: 100%; border-collapse: collapse; margin-bottom: 30px; }}
-                    .data-table td {{ padding: 10px 0; border-bottom: 1px solid #F5F5F5; font-size: 14px; }}
-                    .label {{ color: #999; width: 35%; }}
-                    .val {{ color: {INK}; font-weight: 600; }}
-                    .doc-box {{ background: #FAFAFA; border: 1px dashed {GOLD}; padding: 20px; border-radius: 4px; }}
-                    .app-id {{ font-family: monospace; background: #EEE; padding: 2px 6px; border-radius: 3px; font-size: 13px; }}
-                </style>
-            </head>
-            <body>
-                <div class="wrapper">
-                    <div class="header">
-                        <h1>WhiteFlows <span style="font-weight:300; opacity:0.6;">Admin</span></h1>
-                    </div>
-                    <div class="section">
-                        <div style="margin-bottom:30px;">
-                            <h2 style="margin:0; font-size:24px; color:{INK};">New Application Received</h2>
-                            <p style="margin:5px 0 0; color:#888;">ID: <span class="app-id">{r['app_id']}</span> | Portfolio: <strong style="color:{GOLD};">{r['portfolio']}</strong></p>
-                        </div>
-
-                        <div class="section-h">Applicant Details</div>
-                        <table class="data-table">
-                            <tr><td class="label">Primary Name</td><td class="val">{r['applicant_name']}</td></tr>
-                            <tr><td class="label">Email Address</td><td class="val">{r['email']}</td></tr>
-                            <tr><td class="label">Contact Number</td><td class="val">{r['mobile']}</td></tr>
-                            <tr><td class="label">Submission Date</td><td class="val">{r['submitted_at']}</td></tr>
-                        </table>
-
-                        <div class="section-h">Nominee Information</div>
-                        <table class="data-table">
-                            <tr><td class="label">Full Name</td><td class="val">{r['nominee_name']}</td></tr>
-                            <tr><td class="label">PAN Number</td><td class="val">{r['nominee_pan']}</td></tr>
-                            <tr><td class="label">Date of Birth</td><td class="val">{r['nominee_dob']}</td></tr>
-                            <tr><td class="label">Mobile</td><td class="val">{r['nominee_mobile']}</td></tr>
-                        </table>
-
-                        <div class="section-h">Verified Documents</div>
-                        <div class="doc-box">
-                            <table class="data-table" style="margin-bottom:0;">
-                                {doc_items}
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Build MIME message
-            msg = MIMEMultipart()
-            msg["Subject"] = f"NEW APPLICATION — {r['applicant_name']} — {r['portfolio']}"
-            msg["From"] = GMAIL_SENDER
-            msg["To"] = GMAIL_RECEIVER
-            msg["Reply-To"] = r["email"]
-            
-            # Attach HTML body
-            msg.attach(MIMEText(html_body, "html"))
-            
-            # Attach files
-            attached = 0
-            for doc_info in r["documents"].values():
-                filepath = doc_dir / doc_info["filename"]
-                if not filepath.exists():
-                    log(f"  ⚠️  Attachment missing: {filepath}")
-                    continue
-                
-                with open(filepath, "rb") as f:
-                    part = MIMEBase("application", "octet-stream")
-                    part.set_payload(f.read())
-                encoders.encode_base64(part)
-                part.add_header("Content-Disposition", f'attachment; filename="{doc_info["filename"]}"')
-                msg.attach(part)
-                attached += 1
-            
-            # Send via Gmail SMTP
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-                smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
-                smtp.sendmail(GMAIL_SENDER, GMAIL_RECEIVER, msg.as_bytes())
-            
-            log(f"  [OK] ADMIN EMAIL SENT to {GMAIL_RECEIVER} ({attached} attachment(s))")
-            
-        except smtplib.SMTPAuthenticationError as e:
-            log(f"  [ERROR] ADMIN EMAIL FAILED — SMTP Authentication Error")
-            log(f"     Error details: {e}")
-            log(f"     -> Verify Gmail App Password at: https://myaccount.google.com/apppasswords")
-            log(f"     -> Ensure 2-Step Verification is enabled on your Google Account")
-        except smtplib.SMTPRecipientsRefused as e:
-            log(f"  [ERROR] ADMIN EMAIL FAILED — Invalid recipient address")
-            log(f"     Error details: {e}")
-            log(f"     -> Check GMAIL_RECEIVER in .env file")
-        except smtplib.SMTPException as e:
-            log(f"  [ERROR] ADMIN EMAIL FAILED — SMTP Error: {type(e).__name__}")
-            log(f"     Error details: {e}")
-        except Exception as ex:
-            log(f"  [ERROR] ADMIN EMAIL FAILED — {type(ex).__name__}: {ex}")
-            log(f"     Full error: {str(ex)}")
+    # Check if name already has a reasonable extension
+    if "." in raw_name and len(raw_name.split(".")[-1]) in [3, 4]:
+        return raw_name
+        
+    # Attempt to guess extension from MIME type
+    mime_type = doc_info.get("type", "")
+    ext = mimetypes.guess_extension(mime_type)
     
-    # Run in background
-    log(f"  Starting admin email for {record['applicant_name']}...")
-    t = threading.Thread(target=_send, daemon=True)
-    t.start()
+    # Fallbacks for common types if guess fail
+    if not ext:
+        if "pdf" in mime_type.lower(): ext = ".pdf"
+        elif "png" in mime_type.lower(): ext = ".png"
+        elif "jpg" in mime_type.lower() or "jpeg" in mime_type.lower(): ext = ".jpg"
+        else: ext = ".pdf" # Default fallback for this financial app
+        
+    return f"{raw_name}{ext}"
 
-
-def send_lead_email(lead_data, lead_id, doc_dir=None):
-    """
-    Sends email notification for new consultation leads
-    Optionally attaches uploaded documents from doc_dir
-    """
-    if GMAIL_PASSWORD == "YOUR_APP_PASSWORD_HERE":
-        log("  LEAD EMAIL SKIPPED — Gmail App Password not configured")
-        return
-
-    def _send():
-        try:
-            # Build summary of lead data (skip internal / document fields)
-            skip_keys = {'type', 'subject', 'body', 'documents'}
-            lead_summary = ""
-            for k, v in lead_data.items():
-                if k in skip_keys:
-                    continue
-                label = k.replace('_', ' ').title()
-                lead_summary += f"<tr><td style='color:#999;padding:12px 0;border-bottom:1px solid #F5F5F5;font-size:14px;width:35%;'>{label}:</td><td style='color:#1A1714;padding:12px 0;border-bottom:1px solid #F5F5F5;font-size:14px;font-weight:600;'>{v}</td></tr>"
-
-            # Document attachment summary for email body
-            doc_items = ""
-            documents = lead_data.get('documents', {})
-            if documents:
-                for doc_key, doc_info in documents.items():
-                    doc_items += f"<tr><td style='color:#999;padding:8px 0;font-size:13px;'>{doc_info.get('label', doc_key)}</td><td style='color:#1A1714;font-size:13px;font-weight:600;'>{doc_info.get('filename', 'N/A')}</td></tr>"
-
-            # Premium brand colors
-            INK = "#1A1714"
-            GOLD = "#D4A853"
-            PEARL = "#FDFCF9"
-
-            docs_section = ""
-            if doc_items:
-                docs_section = f"""
-                    <div style="margin-top:30px;">
-                        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:{GOLD};margin-bottom:12px;border-bottom:1px solid rgba(212,168,83,0.2);padding-bottom:8px;">Attached Documents</div>
-                        <div style="background:#FAFAFA;border:1px dashed {GOLD};padding:20px;border-radius:4px;">
-                            <table style="width:100%;border-collapse:collapse;">{doc_items}</table>
-                        </div>
-                    </div>
-                """
-
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: {PEARL}; margin:0; padding:20px; }}
-                    .wrapper {{ max-width: 600px; margin: auto; background: #FFF; border: 1px solid {GOLD}; border-radius: 4px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }}
-                    .header {{ background: {INK}; padding: 30px; text-align: center; border-bottom: 2px solid {GOLD}; }}
-                    .header h1 {{ color: {GOLD}; margin: 0; font-size: 20px; letter-spacing: 3px; text-transform: uppercase; }}
-                    .content {{ padding: 40px; }}
-                    .subject-box {{ background: {PEARL}; border-left: 4px solid {GOLD}; padding: 15px 20px; margin-bottom: 30px; }}
-                    .subject-box h3 {{ margin: 0; font-size: 16px; color: {INK}; }}
-                    .data-table {{ width: 100%; border-collapse: collapse; }}
-                    .message-area {{ margin-top: 30px; padding: 20px; background: #F9F9F9; border-radius: 4px; color: #444; font-size: 14px; line-height: 1.6; }}
-                </style>
-            </head>
-            <body>
-                <div class="wrapper">
-                    <div class="header">
-                        <h1>New Strategic Lead</h1>
-                    </div>
-                    <div class="content">
-                        <div class="subject-box">
-                            <p style="margin:0 0 5px; font-size:11px; color:{GOLD}; font-weight:800; text-transform:uppercase;">Inquiry Type: {lead_data.get('type', 'General')}</p>
-                            <h3>{lead_data.get('subject', 'Consultation Request')}</h3>
-                        </div>
-                        
-                        <table class="data-table">
-                            {lead_summary}
-                        </table>
-
-                        {docs_section}
-
-                        {f'<div class="message-area"><strong>Notes:</strong><br/>{lead_data.get("body", "")}</div>' if lead_data.get('body') else ''}
-                        
-                        <div style="margin-top:30px; padding-top:20px; border-top:1px solid #EEE; text-align:center;">
-                            <p style="color:#AAA; font-size:10px; letter-spacing:1px; text-transform:uppercase;">Sent via WhiteFlows Strategic Gateway</p>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-
-            # Build MIME message
-            msg = MIMEMultipart()
-            name = lead_data.get('first_name', lead_data.get('name', 'New Client'))
-            msg["Subject"] = f"NEW LEAD — {name} — {lead_data.get('type', 'Consultation')}"
-            msg["From"] = GMAIL_SENDER
-            msg["To"] = GMAIL_RECEIVER
-            
-            email_addr = lead_data.get('email', '')
-            if email_addr:
-                msg["Reply-To"] = email_addr
-
-            msg.attach(MIMEText(html_body, "html"))
-
-            # Attach document files if doc_dir is provided
-            attached = 0
-            if doc_dir and documents:
-                for doc_key, doc_info in documents.items():
-                    filepath = doc_dir / doc_info.get("filename", "")
-                    if not filepath.exists():
-                        log(f"  ⚠️  Lead attachment missing: {filepath}")
-                        continue
-                    with open(filepath, "rb") as f:
-                        part = MIMEBase("application", "octet-stream")
-                        part.set_payload(f.read())
-                    encoders.encode_base64(part)
-                    part.add_header("Content-Disposition", f'attachment; filename="{doc_info["filename"]}"')
-                    msg.attach(part)
-                    attached += 1
-
-            # Send
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-                smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
-                smtp.sendmail(GMAIL_SENDER, GMAIL_RECEIVER, msg.as_bytes())
-
-            log(f"  [OK] LEAD EMAIL SENT to {GMAIL_RECEIVER} ({attached} attachment(s))")
-
-        except Exception as ex:
-            log(f"  [ERROR] LEAD EMAIL FAILED — {type(ex).__name__}: {ex}")
-
-    # Run in background
-    t = threading.Thread(target=_send, daemon=True)
-    t.start()
-
-
-import zipfile
-import shutil
+# ─── Routes ─────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_homepage():
-    """Serve the main HTML file"""
-    html_file = BASE_DIR / "index.html"
-    if not html_file.exists():
-        raise HTTPException(status_code=404, detail="HTML file not found")
-    return FileResponse(html_file, headers={"Cache-Control": "public, max-age=3600"})
+async def serve_index():
+    index_path = BASE_DIR / "index.html"
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>WhiteFlows</h1>", status_code=200)
 
 
-@app.post("/api/submit")
+@app.get("/health")
+async def health():
+    return {"status": "ok", "version": "3.2-extended-filenames", "timestamp": datetime.now().isoformat()}
+
+
 @app.post("/submit")
 async def submit_application(request: Request):
-    """Handle application form submission"""
-    client_ip = request.client.host
-    check_rate_limit(client_ip)
-    
+    """
+    Handles full application form submission (JSON + Base64 Docs).
+    Synchronized with index.html submitRegForm.
+    """
     try:
+        # Rate limiting
+        client_ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For", "unknown")
+        check_rate_limit(client_ip)
+
+        # Parse JSON payload
         data = await request.json()
-        
-        # Generate application ID
-        app_id = datetime.now().strftime('%Y%m%d%H%M%S')
-        
-        # Create application directory
-        app_dir = APPLICATIONS_DIR / app_id
-        app_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Process documents
-        documents = data.get('documents', {})
-        processed_docs = {}
-        
-        for doc_key, doc_data in documents.items():
-            if doc_data:
-                # Save base64 document
-                import base64
-                file_data = doc_data['data'].split(',')[1] if ',' in doc_data['data'] else doc_data['data']
-                file_bytes = base64.b64decode(file_data)
-                
-                ext = doc_data.get('type', 'pdf')
-                if '/' in ext:
-                    ext = ext.split('/')[-1]
-                
-                filename = f"{doc_key}_{app_id}.{ext}"
-                filepath = app_dir / filename
-                
-                with open(filepath, 'wb') as f:
-                    f.write(file_bytes)
-                
-                processed_docs[doc_key] = {
-                    'label': doc_data.get('label', doc_key),
-                    'filename': filename,
-                    'size_kb': round(len(file_bytes) / 1024, 2)
-                }
-        
-        # Create record
+
+        # Extract text fields
         record = {
-            'app_id': app_id,
-            'portfolio': data.get('portfolio', 'Unknown'),
-            'applicant_name': data.get('applicant_name', ''),
-            'email': data.get('email', ''),
-            'mobile': data.get('mobile', ''),
-            'nominee_name': data.get('nominee_name', ''),
-            'nominee_pan': data.get('nominee_pan', ''),
-            'nominee_dob': data.get('nominee_dob', ''),
-            'nominee_mobile': data.get('nominee_mobile', ''),
-            'submitted_at': data.get('submitted_at', datetime.now().isoformat()),
-            'documents': processed_docs
+            "app_id": f"WF-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "portfolio": data.get("portfolio", ""),
+            "applicant_name": data.get("applicant_name", ""),
+            "email": data.get("email", ""),
+            "mobile": data.get("mobile", ""),
+            "nominee_name": data.get("nominee_name", ""),
+            "nominee_pan": data.get("nominee_pan", ""),
         }
+
+        log(f"[APPLICATION] New submission — {record['app_id']} from {record['applicant_name']}")
+
+        # Collect uploaded documents from base64 Data URLs
+        uploaded_docs = {}
+        docs_payload = data.get("documents", {})
         
-        # Save JSON record
-        json_file = app_dir / "application.json"
-        with open(json_file, 'w') as f:
-            json.dump(record, f, indent=2)
-        
-        # Generate PDF Receipt
-        receipt_filename = f"Receipt_{app_id}.pdf"
-        receipt_path = app_dir / receipt_filename
-        receipt_ok = create_pdf_receipt(record, receipt_path)
-        
-        log(f"[OK] Application {app_id} saved: {record['applicant_name']}")
-        
-        # Send emails (both admin and client)
-        send_email_with_docs(record, app_dir)
-        send_client_confirmation_email(record['email'], record['applicant_name'], app_id, receipt_path if receipt_ok else None)
-        
+        for key, doc_info in docs_payload.items():
+            if isinstance(doc_info, dict) and "data" in doc_info:
+                filename = get_safe_filename(doc_info, key)
+                file_bytes = decode_base64_data_url(doc_info["data"])
+                if file_bytes:
+                    uploaded_docs[filename] = file_bytes
+                    log(f"  [DECODE] {key}: {filename} ({len(file_bytes)} bytes)")
+
+        # Generate PDF receipt in memory
+        pdf_bytes = create_pdf_in_memory(record)
+        log(f"  [PDF] Generated in memory ({len(pdf_bytes)} bytes)")
+
+        # Send emails
+        await send_admin_email(record, pdf_bytes, uploaded_docs)
+        await send_client_email(record["email"], record["applicant_name"], record["app_id"], pdf_bytes)
+
         return JSONResponse({
             "success": True,
-            "message": "Application submitted successfully",
-            "app_id": app_id
+            "app_id": record["app_id"],
+            "message": "Application submitted successfully. Check your email for confirmation."
         })
-        
-    except Exception as e:
-        log(f"[ERROR] Error processing application: {e}")
-        log(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+
+    except HTTPException:
+        raise
+    except Exception as ex:
+        log(f"[ERROR] submit_application: {traceback.format_exc()}")
+        return JSONResponse(
+            {"success": False, "message": f"Server error: {str(ex)}"},
+            status_code=500
+        )
 
 
-@app.post("/api/submit-lead")
 @app.post("/submit-lead")
 async def submit_lead(request: Request):
-    """Handle consultation form submission (with optional document uploads)"""
-    client_ip = request.client.host
-    check_rate_limit(client_ip)
-    
+    """
+    Handles enquiry/lead form submission (JSON).
+    Synchronized with index.html doSendEmail / submitRetail / submitProject.
+    Fixes the raw JSON/Base64 display by attaching files correctly.
+    Ensures every file has a proper extension.
+    """
     try:
-        import base64
+        # Rate limiting
+        client_ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For", "unknown")
+        check_rate_limit(client_ip)
+
+        # Parse JSON
         data = await request.json()
         
-        # Create leads directory if not exists
-        leads_dir = BASE_DIR / "leads"
-        leads_dir.mkdir(parents=True, exist_ok=True)
+        log(f"[LEAD] New enquiry from {data.get('name', 'Unknown')} ({data.get('email', 'N/A')})")
+
+        # Separate text fields from documents
+        clean_data = {}
+        attachments = {}
         
-        # Generate lead ID
-        lead_id = datetime.now().strftime('%Y%m%d%H%M%S')
-        
-        # Create a dedicated folder for this lead (for storing documents)
-        lead_dir = leads_dir / lead_id
-        lead_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Process uploaded documents (base64-encoded, same format as /submit)
-        raw_documents = data.pop('documents', {})
-        processed_docs = {}
-        
-        for doc_key, doc_data in raw_documents.items():
-            if doc_data and isinstance(doc_data, dict) and doc_data.get('data'):
-                try:
-                    file_data_str = doc_data['data']
-                    # Strip base64 data-URI prefix if present
-                    if ',' in file_data_str:
-                        file_data_str = file_data_str.split(',')[1]
-                    file_bytes = base64.b64decode(file_data_str)
-                    
-                    ext = doc_data.get('type', 'pdf')
-                    if '/' in ext:
-                        ext = ext.split('/')[-1]
-                    
-                    filename = f"{doc_key}_{lead_id}.{ext}"
-                    filepath = lead_dir / filename
-                    
-                    with open(filepath, 'wb') as f:
-                        f.write(file_bytes)
-                    
-                    processed_docs[doc_key] = {
-                        'label': doc_data.get('label', doc_key.replace('_', ' ').title()),
-                        'filename': filename,
-                        'size_kb': round(len(file_bytes) / 1024, 2)
-                    }
-                    log(f"  [OK] Document saved: {filename} ({processed_docs[doc_key]['size_kb']} KB)")
-                except Exception as doc_err:
-                    log(f"  [WARN] Failed to save document '{doc_key}': {doc_err}")
-        
-        # Add processed docs back into data for the JSON record
-        if processed_docs:
-            data['documents'] = processed_docs
-        
-        # Save lead JSON record
-        lead_file = lead_dir / "lead.json"
-        with open(lead_file, 'w') as f:
-            json.dump(data, f, indent=2)
-        
-        doc_count = len(processed_docs)
-        log(f"[OK] Lead {lead_id} saved: {data.get('name', 'Unknown')} ({doc_count} document(s))")
-        
-        # Send email notification (with document directory for attachments)
-        send_lead_email(data, lead_id, doc_dir=lead_dir if processed_docs else None)
-        
+        # 1. Unpack nested "documents" key if present (used in Scale-Up form)
+        docs_payload = data.get("documents", {})
+        if isinstance(docs_payload, dict):
+            for doc_key, doc_info in docs_payload.items():
+                if isinstance(doc_info, dict) and "data" in doc_info:
+                    filename = get_safe_filename(doc_info, doc_key)
+                    file_bytes = decode_base64_data_url(doc_info["data"])
+                    if file_bytes:
+                        attachments[filename] = file_bytes
+                        log(f"  [DECODE-NESTED-LEAD] {doc_key}: {filename} ({len(file_bytes)} bytes)")
+
+        # 2. Iterate through the rest of the data (legacy or flat support)
+        for k, v in data.items():
+            if k == 'documents':
+                continue # Already handled above
+                
+            # Check if this value is a standalone document object
+            if isinstance(v, dict) and "data" in v and str(v.get("data", "")).startswith("data:"):
+                filename = get_safe_filename(v, k)
+                file_bytes = decode_base64_data_url(v["data"])
+                if file_bytes:
+                    attachments[filename] = file_bytes
+                    log(f"  [DECODE-FLAT-LEAD] {k}: {filename} ({len(file_bytes)} bytes)")
+            else:
+                # Regular field
+                clean_data[k] = v
+
+        # Send simplified lead notification to admin
+        if GMAIL_PASSWORD != "your-app-password":
+
+
+            try:
+                msg = MIMEMultipart()
+                msg["Subject"] = f"NEW ENQUIRY — {clean_data.get('subject', 'Consultation Lead')}"
+                msg["From"] = GMAIL_SENDER
+                msg["To"] = GMAIL_RECEIVER
+
+                # Build HTML table for text data only
+                rows = ""
+                for k, v in clean_data.items():
+                    if k != 'body' and k != 'subject':
+                        rows += f"<tr><td style='padding:8px;border:1px solid #eee;font-weight:bold;text-transform:capitalize;'>{k.replace('_',' ')}</td><td style='padding:8px;border:1px solid #eee;'>{v}</td></tr>"
+
+                html = f"""
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #D4A853;border-radius:4px;overflow:hidden;">
+                    <div style="background:#0E0D0B;padding:20px;text-align:center;border-bottom:3px solid #D4A853;">
+                        <h2 style="color:#D4A853;margin:0;font-size:18px;letter-spacing:2px;text-transform:uppercase;">WhiteFlows Lead Management</h2>
+                    </div>
+                    <div style="padding:30px;">
+                        <table style="border-collapse:collapse;width:100%;margin-bottom:20px;font-size:14px;">
+                            {rows}
+                        </table>
+                        <div style="margin-top:20px;padding:20px;background:#f9f9f9;border-left:4px solid #D4A853;border-radius:2px;">
+                            <strong style="color:#D4A853;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Client Message:</strong><br/>
+                            <p style="margin-top:10px;line-height:1.6;color:#333;">{clean_data.get('body', 'No message body provided.')}</p>
+                        </div>
+                    </div>
+                </div>
+                """
+                msg.attach(MIMEText(html, "html"))
+
+                # Attach decoded documents
+                for filename, file_bytes in attachments.items():
+                    part = MIMEApplication(file_bytes)
+                    part.add_header("Content-Disposition", "attachment", filename=filename)
+                    msg.attach(part)
+
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+                    smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
+                    smtp.sendmail(GMAIL_SENDER, GMAIL_RECEIVER, msg.as_bytes())
+
+                log(f"  [OK] LEAD EMAIL SENT WITH {len(attachments)} ATTACHMENTS")
+            except Exception as e:
+                log(f"  [ERROR] Lead email failed: {e}")
+        else:
+            log("  LEAD EMAIL SKIPPED — Gmail not configured")
+
         return JSONResponse({
             "success": True,
-            "message": "Consultation request received",
-            "lead_id": lead_id
+            "message": "Enquiry received. Our team will contact you shortly."
         })
-        
-    except Exception as e:
-        log(f"[ERROR] Error processing lead: {e}")
-        log(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get("/api/applications")
-@app.get("/applications")
-async def list_applications():
-    """List all applications (admin view)"""
-    try:
-        applications = []
-        for app_dir in APPLICATIONS_DIR.iterdir():
-            if app_dir.is_dir():
-                json_file = app_dir / "application.json"
-                if json_file.exists():
-                    with open(json_file, 'r') as f:
-                        applications.append(json.load(f))
-        
-        applications.sort(key=lambda x: x['app_id'], reverse=True)
-        return JSONResponse(applications)
-        
-    except Exception as e:
-        log(f"✗ Error listing applications: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/download-zip")
-@app.get("/download-zip")
-async def download_optimized_zip():
-    """Create and serve a downloadable ZIP of the optimized WhiteFlows project"""
-    zip_path = BASE_DIR / "static" / "WhiteFlows_Optimized.zip"
-    
-    # Build the ZIP with essential project files
-    exclude_dirs = {'.venv', '__pycache__', '.idea', '.git', 'node_modules', 'applications', 'leads'}
-    exclude_files = {'server.log', 'WhiteFlows_UPDATED_v2.zip', 'WhiteFlows_Optimized.zip'}
-    
-    with zipfile.ZipFile(str(zip_path), 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(str(BASE_DIR)):
-            # Skip excluded directories
-            dirs[:] = [d for d in dirs if d not in exclude_dirs and not d.startswith('.')]
-            rel_root = os.path.relpath(root, str(BASE_DIR))
-            
-            for file in files:
-                if file in exclude_files:
-                    continue
-                filepath = os.path.join(root, file)
-                arcname = os.path.join("WhiteFlows_Optimized", rel_root, file) if rel_root != '.' else os.path.join("WhiteFlows_Optimized", file)
-                zf.write(filepath, arcname)
-    
-    return FileResponse(
-        str(zip_path),
-        media_type="application/zip",
-        filename="WhiteFlows_Optimized.zip",
-        headers={"Content-Disposition": "attachment; filename=WhiteFlows_Optimized.zip"}
-    )
-
-
-@app.get("/WhiteFlows_UPDATED_v2.zip")
-async def download_updated_zip():
-    """Download the updated WhiteFlows v2.0 ZIP file"""
-    zip_file = BASE_DIR / "WhiteFlows_UPDATED_v2.zip"
-    if not zip_file.exists():
-        raise HTTPException(status_code=404, detail="ZIP file not found")
-    return FileResponse(
-        zip_file,
-        media_type="application/zip",
-        filename="WhiteFlows_UPDATED_v2.zip"
-    )
+    except HTTPException:
+        raise
+    except Exception as ex:
+        log(f"[ERROR] submit_lead: {str(ex)}")
+        return JSONResponse(
+            {"success": False, "message": f"Server error: {str(ex)}"},
+            status_code=500
+        )
 
 
 if __name__ == "__main__":
     import uvicorn
-    
-    log("=" * 60)
-    log("WhiteFlows Server (FastAPI Edition) Starting...")
-    log("=" * 60)
-    log(f"Gmail Sender: {GMAIL_SENDER}")
-    log(f"Gmail Receiver: {GMAIL_RECEIVER}")
-    log(f"Password Configured: {'Yes' if GMAIL_PASSWORD != 'YOUR_APP_PASSWORD_HERE' else 'No (using placeholder)'}")
-    log("=" * 60)
-    
-    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+
