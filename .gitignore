@@ -9,6 +9,10 @@ applications/
 
 # Logs
 *.log
+server_logs.txt
+
+# Database
+whiteflows.db
 
 # OS Files
 .DS_Store

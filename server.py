@@ -53,9 +53,10 @@ BREVO_LOGIN    = os.environ.get('BREVO_LOGIN', 'a72c85001@smtp-brevo.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'whiteflows2026')
 BACKUP_RECEIVER_EMAIL = os.environ.get('BACKUP_RECEIVER_EMAIL', '')
 
-# Setup paths (for static assets only — no file writing)
+# Setup paths (for static assets and database)
 BASE_DIR = Path(__file__).parent
-DATABASE_PATH = str(BASE_DIR / "whiteflows.db")
+DATABASE_PATH = os.environ.get("DATABASE_PATH", str(BASE_DIR / "whiteflows.db"))
+LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", str(BASE_DIR / "server_logs.txt"))
 
 
 async def init_db():
@@ -239,7 +240,12 @@ def log(message: str):
     line = f"[{timestamp}] {message}"
     print(line)
     try:
-        with open(BASE_DIR / "server_logs.txt", "a", encoding="utf-8") as f:
+        # Ensure parent directory exists for logs if custom path is set
+        log_path = Path(LOG_FILE_PATH)
+        if not log_path.parent.exists():
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            
+        with open(LOG_FILE_PATH, "a", encoding="utf-8") as f:
             f.write(line + "\n")
     except Exception:
         pass
