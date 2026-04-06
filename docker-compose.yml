@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  whiteflows-app:
+    build: .
+    container_name: whiteflows-production
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      # Inject your Gmail/API credentials via .env file or environment
+      - GMAIL_SENDER=${GMAIL_SENDER}
+      - GMAIL_PASSWORD=${GMAIL_PASSWORD}
+      - GMAIL_RECEIVER=${GMAIL_RECEIVER}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-smtp}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

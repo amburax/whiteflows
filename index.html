@@ -5111,7 +5111,7 @@ nav.scrolled .nav-links a:hover {
 </footer>
 
 <!-- ══ SECURITY MODAL ══ -->
-<div id="secOverlay" class="sec-modal-overlay">
+<div id="secOverlay" class="sec-modal-overlay" style="display: none;">
   <div class="sec-modal">
     <div class="sec-icon">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -5334,6 +5334,10 @@ function openConsultModal(tab) {
 
 
 // ── Hamburger menu ──────────────────────────────────────────
+function isValidPhone(num) {
+  // Must be 10 digits and start with 6-9
+  return /^[6-9]\d{9}$/.test(num.replace(/\D/g, ''));
+}
 (function(){
   const btn     = document.getElementById('hamburgerBtn');
   const overlay = document.getElementById('navOverlay');
@@ -5390,11 +5394,6 @@ document.addEventListener('input', function(e) {
     }
   }
 });
-
-/* Validate phone — check if numeric part is 10 digits */
-function isValidPhone(num) {
-  return num.replace(/\D/g, '').length === 10;
-}
 
 /* Validate Indian PAN Card */
 function isValidPAN(pan) {
@@ -5565,13 +5564,13 @@ function showSecurityModal(title, message) {
   
   titleEl.textContent = title;
   msgEl.textContent   = message;
-  overlay.classList.add('active');
+  overlay.style.display = 'flex'; setTimeout(function() { overlay.classList.add('active'); }, 10);
   document.body.style.overflow = 'hidden';
 }
 
 function closeSecurityModal() {
   var overlay = document.getElementById('secOverlay');
-  if (overlay) overlay.classList.remove('active');
+  if (overlay) { overlay.classList.remove('active'); setTimeout(function() { overlay.style.display = 'none'; }, 400); }
   document.body.style.overflow = '';
 }
 
@@ -5676,6 +5675,7 @@ Submitted via WhiteFlows Website`);
   _pendingFormType = 'retail';
   _pendingEmailData = { 
     type: 'retail', 
+    form_name: 'Retail/HNI Consult',
     subject: decodeURIComponent(_pendingSubj),
     name: `${fname} ${lname}`,
     email: email,
@@ -5757,6 +5757,7 @@ Submitted via WhiteFlows Website`);
   _pendingFormType = 'project';
   _pendingEmailData = { 
     type: 'project', 
+    form_name: 'Project Funding',
     subject: decodeURIComponent(_pendingSubj),
     name: `${fname} ${lname}`,
     email: email,
@@ -5859,6 +5860,7 @@ Submitted via WhiteFlows Website`);
     _pendingFormType = 'scale';
     _pendingEmailData = {
       type: 'scale',
+      form_name: 'Scale-Up Enquiry',
       subject: decodeURIComponent(_pendingSubj),
       name: `${fname} ${lname}`,
       email: email,
@@ -5963,6 +5965,7 @@ Submitted via WhiteFlows Website`);
   _pendingFormType = 'ocean';
   _pendingEmailData = { 
     type: 'ocean', 
+    form_name: 'The Ocean Ecosystem',
     subject: decodeURIComponent(_pendingSubj),
     name: `${fname} ${lname}`,
     email: email,
@@ -6026,6 +6029,7 @@ Submitted via WhiteFlows Website`);
   _pendingFormType = 'institutional';
   _pendingEmailData = { 
     type: 'institutional', 
+    form_name: 'Institutional/Ultra-HNI',
     subject: decodeURIComponent(_pendingSubj),
     entity_name: entity,
     email: email,
@@ -7699,15 +7703,54 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
       return;
     }
 
-    /* ── Try Python server (when running via python server.py) ── */
+    /* Generate PDF in browser (jsPDF) then submit to server */
     var serverUrl = (window.location.protocol === 'file:') ? 'http://localhost:8001/submit' : '/submit';
-    
+
+    var pdf_base64 = '';
+    try {
+      var appId = 'WF-' + new Date().toISOString().replace(/[^0-9]/g,'').slice(0,14);
+      var jsPDF = window.jspdf ? window.jspdf.jsPDF : (window.jsPDF || null);
+      if (jsPDF) {
+        var doc = new jsPDF({ unit: 'mm', format: 'a4' });
+        var GOLD = [212,168,83], INK = [14,13,11], IVORY = [248,247,243], GREY = [150,150,150], LG = [230,230,230];
+        doc.setFillColor(IVORY[0],IVORY[1],IVORY[2]); doc.rect(0,0,210,297,'F');
+        doc.setDrawColor(GOLD[0],GOLD[1],GOLD[2]); doc.line(10,10,200,10); doc.line(10,50,200,50);
+        doc.setFont('helvetica','bold'); doc.setFontSize(22);
+        doc.setTextColor(GOLD[0],GOLD[1],GOLD[2]);
+        doc.text('CERTIFICATE OF APPLICATION',200,38,{align:'right'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(INK[0],INK[1],INK[2]);
+        doc.text('Application ID: '+appId,10,62);
+        var now=new Date(), months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+        var ds=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+        doc.text('Date: '+ds,10,72);
+        var rows2=[['Portfolio Choice',portfolio||'N/A'],['Applicant Name',name||'N/A'],['Email Address',email||'N/A'],['Mobile Number',mobile||'N/A'],['Nominee Name',nomName||'N/A'],['Nominee PAN',nomPAN||'N/A']];
+        var y=85;
+        rows2.forEach(function(r){
+          doc.setFillColor(255,255,255); doc.setDrawColor(LG[0],LG[1],LG[2]);
+          doc.rect(10,y,50,12,'FD'); doc.rect(60,y,140,12,'FD');
+          doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(120,120,120);
+          doc.text(r[0],12,y+8);
+          doc.setFont('helvetica','normal'); doc.setTextColor(INK[0],INK[1],INK[2]);
+          doc.text(String(r[1]).substring(0,50),62,y+8); y+=12;
+        });
+        doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(GREY[0],GREY[1],GREY[2]);
+        var ft='This is a computer-generated confirmation of your application to WhiteFlows International. Our advisory desk will review your documents and verify your identity within 24 working hours. SEBI Registered Investment Advisory.';
+        doc.text(doc.splitTextToSize(ft,190),10,y+20);
+        doc.setDrawColor(GOLD[0],GOLD[1],GOLD[2]); doc.line(10,280,200,280);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(GOLD[0],GOLD[1],GOLD[2]);
+        doc.text('WHITEFLOWS INTERNATIONAL — SEBI REGISTERED INVESTMENT ADVISORY',105,286,{align:'center'});
+        pdf_base64 = doc.output('datauristring');
+      }
+    } catch(pdfErr) { console.warn('PDF gen (non-critical):',pdfErr); }
+
     var payload = {
+      // app_id is now generated by the server for professional sequencing
       portfolio: portfolio, applicant_name: name,
       email: email, mobile: mobile,
       nominee_name: nomName, nominee_pan: nomPAN,
       nominee_dob: nomDOB, nominee_mobile: nomMob,
       submitted_at: new Date().toISOString(),
+      pdf_base64: pdf_base64,
       documents: _uploadedFiles
     };
 
@@ -7716,25 +7759,18 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    .then(function(res) { 
-      if (!res.ok) throw new Error('Server returned ' + res.status);
-      return res.json(); 
-    })
+    .then(function(res) { if (!res.ok) throw new Error('Server returned '+res.status); return res.json(); })
     .then(function(data) {
       _setBtnState(false);
       if (data.success) { _showSuccess(name); }
-      else { showSecurityModal('Submission Error', 'Application saved but email failed: ' + (data.error || 'Unknown')); }
+      else { showSecurityModal('Submission Error', 'Application saved but email failed: '+(data.error||'Unknown')); }
     })
     .catch(function(err) {
       _setBtnState(false);
       console.error('Submission error:', err);
-      
       var isRateLimit = err.message.includes('429');
       var title = isRateLimit ? 'Security Limit Reached' : 'Connection Error';
-      var msg = isRateLimit 
-        ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.'
-        : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
-      
+      var msg = isRateLimit ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.' : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
       showSecurityModal(title, msg);
     });
     return;
@@ -7833,9 +7869,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
   position: fixed; inset: 0; background: rgba(14,13,11,0.85);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   z-index: 2000; display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-.sec-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.sec-modal-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
 .sec-modal {
   background: var(--ink); border: 1px solid var(--gold);
   width: 90%; max-width: 440px; padding: 48px 40px; text-align: center;
@@ -7945,6 +7981,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- ══ AOS ANIMATIONS JS — deferred initialization ══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
 <script>
   // Initialize AOS after DOM is ready and first paint is done
