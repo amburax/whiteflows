@@ -107,3 +107,17 @@
 [2026-04-06 11:54:41] [DB] Initialised: C:\Users\rashi\Downloads\WhiteFlows_v4_Cloudflare\WhiteFlows\whiteflows.db
 [2026-04-06 11:54:41] [SYSTEM] Background schedulers (Backup + Daily Digest) active.
 [2026-04-06 12:13:57] [SECURITY] JWT expired. Forcing re-login.
+[2026-04-06 12:37:54] [LEAD] New enquiry from Murtaza J (murtazajd53@gmail.com) in Local Development
+[2026-04-06 12:37:54]   [DB] Lead Saved: Murtaza J
+[2026-04-06 12:37:54]   [OK] LEAD EMAIL DISPATCHED WITH 0 ATTACHMENTS
+[2026-04-06 12:37:56]   [OK] Brevo SMTP Success: murtazajd53@gmail.com
+[2026-04-06 13:27:34] [DB] Initialised: C:\Users\rashi\Downloads\WhiteFlows_v4_Cloudflare\WhiteFlows\whiteflows.db
+[2026-04-06 13:27:34] [SYSTEM] Background schedulers (Backup + Daily Digest) active.
+[2026-04-06 13:31:21] [DB] Initialised: C:\Users\rashi\Downloads\WhiteFlows_v4_Cloudflare\WhiteFlows\whiteflows.db
+[2026-04-06 13:31:21] [SYSTEM] Background schedulers (Backup + Daily Digest) active.
+[2026-04-06 13:33:28] [DB] Initialised: C:\Users\rashi\Downloads\WhiteFlows_v4_Cloudflare\WhiteFlows\whiteflows.db
+[2026-04-06 13:33:28] [SYSTEM] Background schedulers (Backup + Daily Digest) active.
+[2026-04-06 13:38:41] [LEAD] New enquiry from murtaza (murtaza@gmail.com) in Local Development
+[2026-04-06 13:38:41]   [DB] Lead Saved: murtaza
+[2026-04-06 13:38:41]   [OK] LEAD EMAIL DISPATCHED WITH 0 ATTACHMENTS
+[2026-04-06 13:38:42]   [OK] Brevo SMTP Success: whiteflowsinc@gmail.com

@@ -1,94 +1,84 @@
-# Deployment Guide: WhiteFlows Self-Hosted ("Everything Own")
+# WhiteFlows Elite: Global Deployment Guide 🚀🌍
 
-This guide provides step-by-step instructions for deploying WhiteFlows on your own **Virtual Private Server (VPS)** using Ubuntu, Nginx, and Docker.
+This guide explains how to take your WhiteFlows Elite platform from your local machine to the global web using **Render** or **Hostinger**.
+
+---
+
+## 📋 Pre-Deployment Checklist
+Before you begin, ensure you have:
+1.  **GitHub Access**: Your code must be pushed to your repository.
+2.  **SMTP Credentials**: Your Gmail App Password or Brevo API Key ready.
+3.  **Domain Name**: Purchased through Hostinger or Cloudflare.
 
 ---
 
-## 1. Server Prerequisites
-- **OS**: Ubuntu 22.04 LTS (Recommended)
-- **Specs**: 1 vCPU, 1GB RAM (Minimum)
-- **Ports**: Ensure ports `80`, `443`, and `22` are open.
+## 1. Option A: Deploying on Render (Easiest) ☁️
+Render is perfect for quick launches and automatic updates.
 
-## 2. Server Environment Setup
-Connect to your VPS via SSH and run:
-
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Docker & Docker Compose
-sudo apt install docker.io docker-compose -y
-sudo systemctl start docker
-sudo systemctl enable docker
-```
-
-## 3. Upload & Configure
-1. Upload the `WhiteFlows/` directory to your server (e.g., to `/home/ubuntu/whiteflows`).
-2. Create or edit the `.env` file on the server:
-
-```bash
-nano .env
-```
-
-**Fill in your credentials:**
-```env
-GMAIL_SENDER=murtazajd53@gmail.com
-GMAIL_PASSWORD=udmp apfh jjcp kiyz
-GMAIL_RECEIVER=mra8135100@gmail.com
-EMAIL_PROVIDER=smtp
-```
-
-## 4. Launch the Application
-Run the following command to build and start the container in detached mode:
-
-```bash
-sudo docker-compose up -d --build
-```
-The app will now be running on `http://localhost:8001`.
-
-## 5. Nginx Reverse Proxy (SSL Setup)
-To map your domain (e.g., `app.whiteflows.com`) and add HTTPS:
-
-```bash
-# Install Nginx and Certbot
-sudo apt install nginx certbot python3-certbot-nginx -y
-
-# Create Nginx Config
-sudo nano /etc/nginx/sites-available/whiteflows
-```
-
-**Paste this config (replace `yourdomain.com`):**
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:8001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-```bash
-# Enable the site
-sudo ln -s /etc/nginx/sites-available/whiteflows /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-
-# Get SSL Certificate
-sudo certbot --nginx -d yourdomain.com
-```
-
-## 6. Verification Checklist
-- [ ] Accessible via `https://yourdomain.com`
-- [ ] Forms submit successfully
-- [ ] 5 Uploads + 1 Receipt = 6 Attachments (No duplicates)
-- [ ] Logs can be viewed via `sudo docker-compose logs -f`
+1.  **Create an Account**: Log in to [Render.com](https://render.com).
+2.  **New Web Service**: Click `New` > `Web Service`.
+3.  **Connect GitHub**: Select your `WhiteFlows` repository.
+4.  **Settings**:
+    - **Runtime**: `Python 3`
+    - **Build Command**: `pip install -r requirements.txt`
+    - **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker server:app --bind 0.0.0.0:$PORT`
+5.  **Environment Variables**: Click `Advanced` > `Add Environment Variable`. Add ALL keys from your `.env` (ADMIN_PASSWORD, GMAIL_SENDER, etc.).
+6.  **Deploy**: Click `Create Web Service`. Your site will be live in minutes!
 
 ---
-> [!TIP]
-> Since you are hosting this yourself, you do not need to worry about Cloudflare Worker limits. The **Gmail SMTP** logic we built will work perfectly as long as your VPS provider allows outgoing traffic on port 465/587.
+
+## 2. Option B: Deploying on Hostinger VPS (Elite Performance) 🏗️
+Recommended for maximum control and speed.
+
+### Step 1: Server Preparation
+1.  **Access VPS**: Log in via SSH: `ssh root@your_server_ip`.
+2.  **Install Python**: 
+    - `sudo apt update && sudo apt install python3-pip python3-venv git -y`
+
+### Step 2: Code Setup
+1.  **Clone Repo**: `git clone https://github.com/amburax/whiteflows.git`
+2.  **Enter Folder**: `cd whiteflows`
+3.  **Create Environment**: 
+    - `python3 -m venv venv`
+    - `source venv/bin/activate`
+    - `pip install -r requirements.txt`
+
+### Step 3: Persistence with PM2
+To keep the server running 24/7 after you close the terminal:
+1.  **Install PM2**: `sudo npm install pm2 -g`
+2.  **Launch App**: `pm2 start "python3 server.py" --name whiteflows`
+3.  **Save List**: `pm2 save && pm2 startup`
+
+---
+
+## 3. Secret Configuration (Environment Variables) 🗝️
+Since we are using the **Safe Method** (where `.env` is NOT on GitHub), you must manually tell your server what your passwords and API keys are. 
+
+### **A. How to Configure on Render:**
+1.  Log in to your **Render Dashboard**.
+2.  Click on your **Web Service** name.
+3.  On the left menu, click **Environment**.
+4.  Click **Add Environment Variable** and copy your keys from your local `.env` exactly like this:
+    - **Key**: `GMAIL_SENDER` | **Value**: `whiteflowsinc@gmail.com`
+    - **Key**: `GMAIL_PASSWORD` | **Value**: `zbhl obsm ycsb yjib`
+    - ... (add all other keys from your .env).
+5.  Click **Save Changes**. Render will automatically restart and your emails will start working!
+
+### **B. How to Configure on Hostinger (VPS):**
+1.  Connect to your VPS via SSH (`ssh root@ip`).
+2.  Navigate to your folder: `cd whiteflows`.
+3.  Create the file: `nano .env`.
+4.  Paste your entire local `.env` content into the terminal.
+5.  Press **CTRL + O** (to save) then **Enter**, then **CTRL + X** (to exit).
+6.  Restart your app: `pm2 restart whiteflows`.
+
+---
+
+## 4. Post-Deployment: Domain & SSL 🛡️
+- **Cloudflare**: Connect your domain to Cloudflare and point the **A Record** to your server IP. Enable **"Full (Strict)" SSL**.
+- **Port Forwarding**: Ensure port `8001` (or your custom port) is open in your Hostinger firewall.
+
+---
+
+**WhiteFlows Elite Platform**  
+*Built for Global Reach. Secured for Ultimate Privacy.* 🚀📈👑

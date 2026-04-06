@@ -1,4 +1,4 @@
-﻿# Environments
+# Environments
 .env
 *.pyc
 __pycache__/
