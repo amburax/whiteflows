@@ -150,16 +150,37 @@ async def get_next_app_id():
         return f"WF-{datetime.now().strftime('%Y%B%d%H%M%S')[:15]}"
 
 
-# FastAPI app instance
-app = FastAPI(title="WhiteFlows", version="4.0-js-pdf")
+from contextlib import asynccontextmanager
 
-# CORS middleware
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Modern FastAPI lifespan handler — replaces deprecated @app.on_event('startup')."""
+    validate_environment()
+    await init_db()
+    asyncio.create_task(backup_scheduler_loop())
+    asyncio.create_task(daily_digest_scheduler_loop())
+    asyncio.create_task(_rate_limit_cleanup_loop())
+    log("[SYSTEM] Background schedulers (Backup + Daily Digest + Rate-Limit Cleanup) active.")
+    yield
+    # (shutdown logic can go here if needed in future)
+
+# FastAPI app instance
+app = FastAPI(title="WhiteFlows", version="4.0-js-pdf", lifespan=lifespan)
+
+
+# CORS middleware — restrict to whiteflows.com only
+_ALLOWED_ORIGINS = [
+    "https://whiteflows.com",
+    "https://www.whiteflows.com",
+    "http://localhost:8001",   # local development
+    "http://127.0.0.1:8001",  # local development
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Gzip middleware
@@ -196,6 +217,17 @@ def check_rate_limit(ip: str, limit: int = 4, window: int = 3600):
         )
     _rate_limits[ip].append(now)
     return True
+
+async def _rate_limit_cleanup_loop():
+    """Runs every 30 minutes and removes stale IPs to prevent memory growth."""
+    while True:
+        await asyncio.sleep(1800)  # 30 minutes
+        now = time.time()
+        stale = [ip for ip, ts in _rate_limits.items() if not any(now - t < 3600 for t in ts)]
+        for ip in stale:
+            del _rate_limits[ip]
+        if stale:
+            log(f"[CLEANUP] Rate limit memory: removed {len(stale)} stale IP(s). Active: {len(_rate_limits)}")
 
 
 # Mount static files
@@ -1582,14 +1614,6 @@ def validate_environment():
         log(w)
     if warnings:
         log("[SYSTEM] Please review the above warnings. Plausible to ignore only for local testing.")
-
-@app.on_event("startup")
-async def startup_event():
-    validate_environment()
-    await init_db()
-    asyncio.create_task(backup_scheduler_loop())
-    asyncio.create_task(daily_digest_scheduler_loop())
-    log("[SYSTEM] Background schedulers (Backup + Daily Digest) active.")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
