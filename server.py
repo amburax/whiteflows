@@ -251,16 +251,19 @@ def get_safe_filename(doc_info: dict, default_key: str) -> str:
 
 
 async def fetch_ip_location(ip: str) -> str:
-    """Uses a free API to resolve IP into a City/Region string silently."""
+    """Uses a free HTTPS API to resolve IP into a City/Region string silently."""
     if ip in ["127.0.0.1", "localhost", "::1", "unknown"]:
         return "Local Development"
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get(f"http://ip-api.com/json/{ip}")
+            resp = await client.get(f"https://ipapi.co/{ip}/json/")
             if resp.status_code == 200:
                 res_data = resp.json()
-                if res_data.get("status") == "success":
-                    return f"{res_data.get('city')}, {res_data.get('regionName')}, {res_data.get('country')}"
+                city = res_data.get("city", "")
+                region = res_data.get("region", "")
+                country = res_data.get("country_name", "")
+                if city:
+                    return f"{city}, {region}, {country}"
     except Exception as e:
         log(f"  [WARN] Geo IP lookup failed: {e}")
     return "Unknown Location"
@@ -490,7 +493,12 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
 
 # ─── Admin Dashboard Routes ──────────────────────────────────────────────────
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "whiteflows-secret-2026")
+import secrets as _secrets
+_jwt_env = os.environ.get("JWT_SECRET", "")
+JWT_SECRET = _jwt_env if _jwt_env else _secrets.token_hex(32)
+if not _jwt_env:
+    log("[SECURITY] WARNING: JWT_SECRET not set. Generated a random secret — admin sessions will reset on every restart. Set JWT_SECRET in your .env for persistence.")
+
 
 def verify_jwt(request: Request) -> bool:
     token = request.cookies.get("wf_session")
