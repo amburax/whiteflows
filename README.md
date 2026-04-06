@@ -1,44 +1,34 @@
-# WhiteFlows International
+# WhiteFlows | Elite Lead Intelligence Platform 🦅💎
 
-SEBI Registered Investment Advisory website.
+WhiteFlows is a high-performance, automated lead management ecosystem designed for global project funding and private banking services. It combines a **Glassmorphism Command Center** with **Automated Intelligence Reports** to give administrators a state-of-the-art experience.
 
-## What Changed (v4.0)
+---
 
-**Problem:** `fpdf2` (Python PDF library) is not supported in Cloudflare Workers.
+## ✨ Premium Features
+- **Elite Admin Dashboard**: A luxury glassmorphic interface with **Dark/Light Mode** toggles and bold, high-contrast typography.
+- **Daily Intelligence Digest 📊**: Automatic **8:00 AM** email summaries of all new leads and applications from the previous 24 hours.
+- **Smart Geolocation 🌍**: Real-time IP-to-Location mapping (City, Country, ISP) for every incoming enquiry.
+- **Security First 🔒**: 
+    - **Bank-Grade JWT**: 30-minute auto-logout for session security.
+    - **Hashed Credentials**: Professional admin authentication.
+    - **Global Rate Limiting**: Anti-spam protection built-in.
+- **Categorized Workflow**: Automated lead sorting into specialized tables (Retail, Project Funding, Ocean Ecosystem, etc.).
+- **Optimized Exports**: Strictly partitioned CSV/Excel exports with category headers for instant analysis.
 
-**Solution:** PDF generation moved to the browser using **jsPDF** (loaded via CDN — no install needed).
+## 🚀 Tech Stack
+- **Backend**: Python (FastAPI)
+- **Database**: SQLite (Aiosqlite for async performance)
+- **Security**: PyJWT & Secrets hashing
+- **UI/UX**: HTML5, Vanilla CSS (Glassmorphism), FontAwesome icons, Google Fonts (Outfit & Inter)
+- **Automation**: Async Background Schedulers for backups and daily reports.
 
-- The browser generates the Certificate of Application PDF client-side
-- The PDF is sent to the server as base64 in the request payload
-- The server receives the ready-made PDF and attaches it to emails
-- No Python PDF libraries required — fully Cloudflare compatible
+## 🛠️ Setup & Launch
+1.  **Environment**: Configure your `.env` file using `.env.example` as a template.
+2.  **Dependencies**: `pip install -r requirements.txt`
+3.  **Run Server**: `python server.py`
+4.  **Admin Login**: `/admin-dashboard-logs` (Password from your `.env`).
 
-## Setup
+---
 
-1. Copy `.env.example` to `.env` and fill in your Gmail credentials
-2. For Cloudflare: set secrets via `wrangler secret put GMAIL_SENDER` etc.
-
-## Running Locally
-
-```bash
-pip install -r requirements.txt
-python server.py
-```
-
-Open: http://localhost:8001
-
-## Deploying to Cloudflare Workers
-
-```bash
-wrangler deploy
-wrangler secret put GMAIL_SENDER
-wrangler secret put GMAIL_PASSWORD
-wrangler secret put GMAIL_RECEIVER
-```
-
-## Deploying to Render.com (full Python support)
-
-1. Connect repo to Render
-2. Build command: `pip install -r requirements.txt`
-3. Start command: `python server.py`
-4. Set environment variables in Render dashboard
+**WhiteFlows Elite v1.0**  
+*Built for Global Reach. Secured for Ultimate Privacy.* 🚀📈👑
