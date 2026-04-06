@@ -172,7 +172,8 @@
 
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { scroll-behavior:smooth; }
+html { scroll-behavior:smooth; overflow-x: hidden; }
+
 
 body {
   font-family: 'Raleway', sans-serif;
@@ -1930,8 +1931,14 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 
 .portfolio-grid {
   display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:32px;
+  grid-template-columns:1fr;
+  gap:24px;
+}
+@media(min-width:900px) {
+  .portfolio-grid { grid-template-columns:repeat(2, 1fr); gap:28px; }
+}
+@media(min-width:1200px) {
+  .portfolio-grid { grid-template-columns:repeat(3, 1fr); gap:32px; }
 }
 
 /* Portfolio Card */
@@ -2035,12 +2042,11 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   color:var(--ink);
 }
 
-@media(max-width:1024px) {
-  .portfolio-grid { grid-template-columns:repeat(2, 1fr); }
-}
 @media(max-width:768px) {
-  .portfolio-section { padding:80px 24px; }
-  .portfolio-grid { grid-template-columns:1fr; }
+  .portfolio-section { padding:60px 20px; }
+  .pf-card { padding:24px; }
+  .pf-card-title { font-size:20px; }
+  .pf-stat-val { font-size:22px; }
 }
 
 /* ══ INVESTOR SECTION ══ */
@@ -3133,7 +3139,7 @@ nav.scrolled .nav-links a:hover {
 }
 .portfolio-grid {
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:1fr;
   gap:24px;
 }
 .pf-card {
@@ -3215,12 +3221,10 @@ nav.scrolled .nav-links a:hover {
 }
 .pf-card-btn:hover { background:var(--gold); color:var(--ink); }
 @media(max-width:1024px){ .portfolio-section { padding:80px 32px; } }
+@media(min-width:900px) { .portfolio-grid { grid-template-columns:repeat(2,1fr); } }
+@media(min-width:1200px) { .portfolio-grid { grid-template-columns:repeat(3,1fr); } }
 @media(max-width:768px){
   .portfolio-section { padding:72px 20px; }
-  .portfolio-grid { grid-template-columns:1fr 1fr; }
-}
-@media(max-width:480px){
-  .portfolio-grid { grid-template-columns:1fr; }
 }
 
 
@@ -4782,16 +4786,16 @@ nav.scrolled .nav-links a:hover {
               <option>10+ Years</option>
             </select>
           </div>
-        </div>
-        <div class="fgroup">
-          <label class="flabel">Primary Objective</label>
-          <select id="r-objective" class="fsel finput" required>
-            <option value="">Select Objective</option>
-            <option>Wealth Compounding</option>
-            <option>Income Generation</option>
-            <option>Capital Preservation</option>
-            <option>Portfolio Diversification</option>
-          </select>
+          <div class="fgroup">
+            <label class="flabel">Primary Objective</label>
+            <select id="r-objective" class="fsel finput" required>
+              <option value="">Select Objective</option>
+              <option>Wealth Creation</option>
+              <option>Retirement Planning</option>
+              <option>Passive Income</option>
+              <option>Capital Preservation</option>
+            </select>
+          </div>
         </div>
         <div id="r-error" style="display:none;font-family:'Raleway',sans-serif;font-size:11px;color:#dc2626;margin-bottom:12px;letter-spacing:0.05em;"></div>
         <button class="fsubmit" onclick="submitRetail()">Request Consultation &rarr;</button>
@@ -4855,11 +4859,13 @@ nav.scrolled .nav-links a:hover {
             </select>
           </div>
           <div class="fgroup">
-            <label class="flabel">Purpose</label>
+            <label class="flabel">Purpose of Funding</label>
             <select id="p-purpose" class="fsel finput" required>
-              <option value="">Select</option>
-              <option>Expansion</option>
-              <option>New Business</option>
+              <option value="">Select Purpose</option>
+              <option>Business Expansion</option>
+              <option>New Venture / Startup</option>
+              <option>Working Capital</option>
+              <option>Debt Restructuring</option>
             </select>
           </div>
         </div>
@@ -5043,9 +5049,9 @@ nav.scrolled .nav-links a:hover {
             <label class="flabel">AUM Range</label>
             <select class="fsel finput" id="i-aum" required>
               <option value="">-- Select AUM --</option>
-              <option>₹1Cr – ₹5Cr</option>
-              <option>₹5Cr – ₹25Cr</option>
-              <option>₹25Cr – ₹100Cr</option>
+              <option>₹10Cr – ₹25Cr</option>
+              <option>₹25Cr – ₹50Cr</option>
+              <option>₹50Cr – ₹100Cr</option>
               <option>₹100Cr+</option>
             </select>
           </div>
@@ -5541,7 +5547,7 @@ function doSendEmail(customBtn) {
     var isRateLimit = err.message.includes('429');
     var title = isRateLimit ? 'Security Limit Reached' : 'Connection Error';
     var msg = isRateLimit 
-      ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.'
+      ? 'To protect our premium infrastructure, we limit submissions to 4 per hour. Please try again shortly.'
       : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
     
     showSecurityModal(title, msg);
@@ -7770,7 +7776,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
       console.error('Submission error:', err);
       var isRateLimit = err.message.includes('429');
       var title = isRateLimit ? 'Security Limit Reached' : 'Connection Error';
-      var msg = isRateLimit ? 'To protect our premium infrastructure, we limit submissions to 10 per hour. Please try again shortly.' : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
+      var msg = isRateLimit ? 'To protect our premium infrastructure, we limit submissions to 4 per hour. Please try again shortly.' : 'Could not connect to our secure server. Please ensure your internet is stable and try again.';
       showSecurityModal(title, msg);
     });
     return;

@@ -182,7 +182,7 @@ async def add_cache_control_header(request: Request, call_next):
 # In-memory rate limiting
 _rate_limits = {}
 
-def check_rate_limit(ip: str, limit: int = 100, window: int = 3600):
+def check_rate_limit(ip: str, limit: int = 4, window: int = 3600):
     now = time.time()
     if ip not in _rate_limits:
         _rate_limits[ip] = [now]
@@ -192,7 +192,7 @@ def check_rate_limit(ip: str, limit: int = 100, window: int = 3600):
         log(f"[SECURITY] Rate limit exceeded for IP: {ip}")
         raise HTTPException(
             status_code=429,
-            detail=f"Rate limit exceeded. You can only send {limit} submissions per hour. Please try again later."
+            detail=f"Security Limit Reached: You have reached the maximum of {limit} submissions per hour from this IP. Please try again later."
         )
     _rate_limits[ip].append(now)
     return True
@@ -342,7 +342,10 @@ async def submit_application(request: Request, background_tasks: BackgroundTasks
 
         # Send emails in the background (Instantly returns success to browser)
         background_tasks.add_task(send_admin_email, record, pdf_bytes, uploaded_docs)
-        background_tasks.add_task(send_client_email, record["email"], record["applicant_name"], record["app_id"], pdf_bytes)
+        # OLD: background_tasks.add_task(send_client_email, record["email"], record["applicant_name"], record["app_id"], pdf_bytes)
+        
+        # New Branded Elite Auto-Responder
+        background_tasks.add_task(send_client_confirmation, record["email"], record["applicant_name"], record['app_id'], True)
 
         return JSONResponse({
             "success": True,
@@ -418,7 +421,7 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
         await save_lead(extracted_name, extracted_email, extracted_mobile, clean_data)
 
         # Send lead notification to admin
-        subject = f"New Enquiry — {data.get('name', 'WhiteFlows Lead')}"
+        subject = f"New Enquiry — {extracted_name}"
         
         # Select primary sender for identity
         from_email = BREVO_LOGIN if (BREVO_SMTP_KEY or BREVO_API_KEY) else GMAIL_SENDER
@@ -461,13 +464,16 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
                     "hash": content_hash
                 })
 
-        # Send lead email in the background
-        background_tasks.add_task(dispatch_email, GMAIL_RECEIVER, subject, html, lead_attachments)
-        log(f"  [OK] LEAD EMAIL DISPATCHED WITH {len(lead_attachments)} ATTACHMENTS")
+        # Triggers Admin Notification
+        background_tasks.add_task(send_admin_email_cascade, GMAIL_RECEIVER, subject, html, lead_attachments)
+        
+        # New Branded Elite Auto-Responder for Leads
+        ref_id = f"REF-{hashlib.md5(str(time.time()).encode()).hexdigest()[:6].upper()}"
+        background_tasks.add_task(send_client_confirmation, extracted_email, extracted_name, ref_id, False)
 
         return JSONResponse({
             "success": True,
-            "message": "Enquiry received. Our team will contact you shortly."
+            "message": "Lead received successfully. You will hear from us shortly."
         })
 
     except HTTPException:
@@ -749,7 +755,30 @@ async def show_admin_dashboard(request: Request):
 
                 @media (max-width: 768px) {{
                     .navbar {{ flex-direction: column; gap: 20px; }}
-                    th:nth-child(2), td:nth-child(2) {{ display: none; }} /* Hide email on small mobile */
+                    /* On mobile: keep email column but truncate it */
+                    td:nth-child(2) {{ 
+                        max-width: 90px; 
+                        overflow: hidden; 
+                        text-overflow: ellipsis; 
+                        white-space: nowrap;
+                        font-size: 11px;
+                        color: var(--gold);
+                    }}
+                    /* Make rows clickable for expand */
+                    tr.data-row {{ cursor: pointer; }}
+                    tr.data-row:hover {{ background: rgba(212, 168, 83, 0.08); }}
+                    /* Expanded detail row */
+                    .expand-row td {{ 
+                        padding: 12px 20px;
+                        font-size: 12px;
+                        background: rgba(212, 168, 83, 0.04);
+                        border-top: 1px dashed var(--glass-border);
+                        line-height: 1.8;
+                        display: none;
+                    }}
+                    .expand-row.open td {{ display: table-cell; }}
+                    td {{ padding: 14px 10px; font-size: 12px; }}
+                    th {{ padding: 14px 10px; font-size: 10px; }}
                 }}
             </style>
         </head>
@@ -853,11 +882,39 @@ async def show_admin_dashboard(request: Request):
                         if (!tbody) return;
                         const rows = tbody.getElementsByTagName('tr');
                         for (let i = 0; i < rows.length; i++) {{
+                            if (rows[i].classList.contains('expand-row')) continue;
                             const text = rows[i].innerText.toLowerCase();
                             rows[i].style.display = text.includes(term) ? '' : 'none';
                         }}
                     }});
                 }}
+
+                // Tap-to-expand: inject expand rows after each data row
+                document.addEventListener('DOMContentLoaded', function() {{
+                    document.querySelectorAll('tbody').forEach(tbody => {{
+                        const dataRows = Array.from(tbody.querySelectorAll('tr'));
+                        dataRows.forEach(row => {{
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length < 2) return;
+                            const name = cells[0]?.innerText || '';
+                            const email = cells[1]?.innerText || '';
+                            const mobile = cells[2]?.innerText || '';
+                            const source = cells[3]?.innerText || '';
+                            const date = cells[4]?.innerText || '';
+                            // Create hidden expand row
+                            const expandRow = document.createElement('tr');
+                            expandRow.className = 'expand-row';
+                            expandRow.innerHTML = `<td colspan="6">📧 <strong>Email:</strong> ${{email}}<br>📱 <strong>Mobile:</strong> ${{mobile}}<br>📅 <strong>Date:</strong> ${{date}}<br>🏷️ <strong>Source:</strong> ${{source}}</td>`;
+                            row.classList.add('data-row');
+                            row.insertAdjacentElement('afterend', expandRow);
+                            // Toggle on click
+                            row.addEventListener('click', function(e) {{
+                                if (e.target.classList.contains('btn-delete') || e.target.closest('.btn-delete')) return;
+                                expandRow.classList.toggle('open');
+                            }});
+                        }});
+                    }});
+                }});
 
                 let pendingDelete = null;
                 function deleteRecord(type, id) {{
@@ -1305,6 +1362,78 @@ async def send_via_gmail_smtp(to_email: str, subject: str, html: str, attachment
         log(f"  [OK] Gmail SMTP Success: {to_email}")
     except Exception as e:
         log(f"  [ERROR] Gmail SMTP failed: {e}")
+
+
+async def send_admin_email_cascade(to_email: str, subject: str, html: str, attachments: list):
+    """Generic email cascade for admin notifications and leads."""
+    success = False
+    if BREVO_API_KEY:
+        success = await send_via_brevo_api(to_email, subject, html, attachments)
+    if not success and BREVO_SMTP_KEY and BREVO_LOGIN:
+        success = await send_via_brevo_smtp(to_email, subject, html, attachments)
+    if not success and GMAIL_SENDER and GMAIL_PASSWORD:
+        await send_via_gmail_smtp(to_email, subject, html, attachments)
+    return success
+
+
+async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app: bool = False):
+    """Sends a professional, branded confirmation email to the client."""
+    subject = f"WhiteFlows: Confirmation of your {'Application' if is_app else 'Enquiry'} [Ref: {ref_id}]"
+    
+    # Premium Elegant HTML Template
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #F8F7F3; color: #0E0D0B; margin: 0; padding: 0; line-height: 1.6; }}
+            .container {{ max-width: 600px; margin: 40px auto; background: #ffffff; border: 1px solid #E5E2D9; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }}
+            .header {{ background: #0E0D0B; padding: 40px 20px; text-align: center; border-bottom: 4px solid #D4A853; }}
+            .content {{ padding: 40px; }}
+            .footer {{ background: #F2F0EA; padding: 20px; text-align: center; font-size: 11px; color: #6E6A62; border-top: 1px solid #E5E2D9; }}
+            .gold-btn {{ display: inline-block; padding: 14px 30px; background: #D4A853; color: #0E0D0B; text-decoration: none; font-weight: bold; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 25px; border-radius: 2px; transition: background 0.3s; }}
+            h1 {{ font-family: serif; color: #D4A853; font-size: 24px; letter-spacing: 1px; margin-bottom: 20px; }}
+            .ref-chip {{ background: #F2F0EA; padding: 5px 12px; border-radius: 4px; font-family: monospace; font-weight: bold; color: #3C3A35; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div style="font-family: serif; color: #D4A853; font-size: 28px; letter-spacing: 3px; font-weight: bold;">WHITEFLOWS</div>
+                <div style="color: #A8A49C; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px;">International Advisory</div>
+            </div>
+            <div class="content">
+                <h1>Welcome to the Elite Circle</h1>
+                <p>Greetings, <strong>{name}</strong>,</p>
+                <p>This is to confirm that your <strong>{'application' if is_app else 'enquiry'}</strong> has been securely received by the WhiteFlows International investment desk.</p>
+                
+                <p style="margin: 30px 0;">
+                    Reference ID: <span class="ref-chip">{ref_id}</span>
+                </p>
+
+                <p>Our advisory team has been notified and is currently reviewing your details. We pride ourselves on precision and personalized attention; as such, you can expect a formal response from our desk within <strong>24 business hours</strong>.</p>
+                
+                <p>In the meantime, should you have any immediate concerns, please feel free to reach out via our Elite Support channel on WhatsApp.</p>
+
+                <div style="text-align: center;">
+                    <a href="https://wa.me/918866282752" class="gold-btn">Contact Elite Support</a>
+                </div>
+            </div>
+            <div class="footer">
+                <p>&copy; 2026 WhiteFlows International. All Rights Reserved.</p>
+                <p>SEBI Registered Investment Advisory | Mumbai & Gujarat, India</p>
+                <p style="margin-top: 10px; font-style: italic;">This is an automated confirmation of Receipt. Our primary team will contact you from @whiteflows.com for all further documentation.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Send via shared cascade logic
+    await send_admin_email_cascade(to_email, subject, html, [])
+    
+    log(f"[AUTO-RESPONDER] Sent confirmation to {to_email} (Ref: {ref_id})")
 
 
 async def send_database_backup():
