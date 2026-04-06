@@ -22,7 +22,7 @@ import csv
 from typing import Optional
 import smtplib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -612,18 +612,69 @@ async def admin_login(request: Request):
         return HTMLResponse(content="<script>alert('Incorrect Password'); window.history.back();</script>", status_code=401)
 
 
+async def get_admin_stats():
+    """Calculates key performance metrics for the admin dashboard with optimized logic."""
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # 1. Total Leads
+                await curr.execute("SELECT COUNT(*) FROM leads")
+                total_leads = (await curr.fetchone())[0]
+
+                # 2. Total Applications
+                await curr.execute("SELECT COUNT(*) FROM applications")
+                total_apps = (await curr.fetchone())[0]
+
+                # 3. Monthly Momentum (Last 24 Hours)
+                # Using SQLite compatible timestamp comparison
+                last_24h = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+                await curr.execute("SELECT COUNT(*) FROM leads WHERE created_at >= ?", (last_24h,))
+                momentum = (await curr.fetchone())[0]
+
+                # 4. Global Hotspot (Most frequent Client Location)
+                # We extract intelligence from the metadata JSON
+                await curr.execute("SELECT json_data FROM leads")
+                rows = await curr.fetchall()
+                locations = []
+                for row in rows:
+                    try:
+                        data = json.loads(row[0])
+                        loc = data.get("Client Location", "Unknown")
+                        # Filter out dev/meta noise
+                        if loc not in ["Local Development", "Unknown Location", "N/A"]:
+                            # Truncate long location strings for UI
+                            locations.append(loc[:25] + "..." if len(loc) > 28 else loc)
+                    except: pass
+                
+                from collections import Counter
+                hotspot = Counter(locations).most_common(1)[0][0] if locations else "Global Network"
+
+                return {
+                    "total_leads": total_leads,
+                    "total_apps": total_apps,
+                    "momentum": momentum,
+                    "hotspot": hotspot
+                }
+    except Exception as e:
+        log(f"[ERROR] get_admin_stats failed: {e}")
+        return {"total_leads": 0, "total_apps": 0, "momentum": 0, "hotspot": "Global Reach"}
+
+
 async def show_admin_dashboard(request: Request):
     """The actual dashboard logic, separated for clean access."""
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
-                # Get Leads (include json_data to extract form source)
+                # Get Leads
                 await curr.execute("SELECT id, name, email, mobile, created_at, json_data FROM leads ORDER BY created_at DESC")
                 leads = await curr.fetchall()
                 
                 # Get Applications
                 await curr.execute("SELECT app_id, applicant_name, email, mobile, created_at FROM applications ORDER BY created_at DESC")
                 apps = await curr.fetchall()
+
+        # Fetch intelligence metrics
+        stats = await get_admin_stats()
 
         def get_lead_source(js_str):
             try:
@@ -749,11 +800,13 @@ async def show_admin_dashboard(request: Request):
                     background: var(--panel-bg); backdrop-filter: var(--blur); 
                     border: 2px solid var(--glass-border); padding: 35px; border-radius: 20px;
                     text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden;
-                    transition: transform 0.3s;
+                    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 }}
-                .stat-card:hover {{ transform: translateY(-5px); border-color: var(--gold); }}
+                .stat-card:hover {{ transform: translateY(-8px); border-color: var(--gold); }}
                 .stat-num {{ font-size: 48px; font-family: 'Outfit'; font-weight: 800; color: var(--gold); display: block; line-height: 1; margin-bottom: 10px; }}
-                .stat-label {{ color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }}
+                .stat-label {{ color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }}
+                .stat-label i {{ color: var(--gold); opacity: 0.7; }}
+                .stat-card em {{ font-family: sans-serif; font-style: normal; font-size: 12px; color: var(--gold); position: absolute; top: 15px; right: 20px; opacity: 0.6; }}
 
                 /* SEARCH */
                 .search-container {{ margin-bottom: 40px; position: relative; }}
@@ -847,12 +900,24 @@ async def show_admin_dashboard(request: Request):
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <span class="stat-num">{len(leads)}</span>
-                        <span class="stat-label">Total Leads</span>
+                        <em>Total Volume</em>
+                        <span class="stat-num">{stats['total_leads']}</span>
+                        <span class="stat-label"><i class="fas fa-users"></i> Global Leads</span>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-num">{len(apps)}</span>
-                        <span class="stat-label">Total Applications</span>
+                        <em>Elite Desk</em>
+                        <span class="stat-num">{stats['total_apps']}</span>
+                        <span class="stat-label"><i class="fas fa-file-contract"></i> Full Apps</span>
+                    </div>
+                    <div class="stat-card">
+                        <em>Momentum</em>
+                        <span class="stat-num" style="color: #4ade80;">+{stats['momentum']}</span>
+                        <span class="stat-label"><i class="fas fa-bolt"></i> Leads (24H)</span>
+                    </div>
+                    <div class="stat-card">
+                        <em>Active Reach</em>
+                        <span class="stat-num" style="font-size: 20px; padding: 14px 0;">{stats['hotspot']}</span>
+                        <span class="stat-label"><i class="fas fa-map-marker-alt"></i> Top Location</span>
                     </div>
                 </div>
 
