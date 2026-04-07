@@ -1525,10 +1525,10 @@ async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app
 
                 <p>Our advisory team has been notified and is currently reviewing your details. We pride ourselves on precision and personalized attention; as such, you can expect a formal response from our desk within <strong>24 business hours</strong>.</p>
                 
-                <p>In the meantime, should you have any immediate concerns, please feel free to reach out via our Elite Support channel on WhatsApp.</p>
+                <p>In the meantime, should you have any immediate concerns, please feel free to reach out via our Elite Advisory Desk on WhatsApp.</p>
 
                 <div style="text-align: center;">
-                    <a href="https://wa.me/918866282752" class="gold-btn">Contact Elite Support</a>
+                    <a href="https://wa.me/918866282752?text=Greetings%20WhiteFlows%2C%20I%20am%20interested%20in%20a%20Strategic%20Consultation%20for%20my%20portfolio." class="gold-btn">Connect to Elite Desk</a>
                 </div>
             </div>
             <div class="footer">
