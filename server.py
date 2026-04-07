@@ -631,29 +631,31 @@ async def get_admin_stats():
                 await curr.execute("SELECT COUNT(*) FROM leads WHERE created_at >= ?", (last_24h,))
                 momentum = (await curr.fetchone())[0]
 
-                # 4. Global Hotspot (Most frequent Client Location)
-                # We extract intelligence from the metadata JSON
+                # 4. Global Hotspot & Location Data for Heatmap
                 await curr.execute("SELECT json_data FROM leads")
                 rows = await curr.fetchall()
-                locations = []
+                locations_raw = []
                 for row in rows:
                     try:
                         data = json.loads(row[0])
                         loc = data.get("Client Location", "Unknown")
-                        # Filter out dev/meta noise
                         if loc not in ["Local Development", "Unknown Location", "N/A"]:
-                            # Truncate long location strings for UI
-                            locations.append(loc[:25] + "..." if len(loc) > 28 else loc)
+                            locations_raw.append(loc)
                     except: pass
                 
                 from collections import Counter
-                hotspot = Counter(locations).most_common(1)[0][0] if locations else "Global Network"
+                location_counts = Counter(locations_raw)
+                hotspot = location_counts.most_common(1)[0][0] if locations_raw else "Global Network"
+                
+                # Pass full location data for the heatmap
+                location_json = json.dumps(dict(location_counts))
 
                 return {
                     "total_leads": total_leads,
                     "total_apps": total_apps,
                     "momentum": momentum,
-                    "hotspot": hotspot
+                    "hotspot": hotspot,
+                    "location_json": location_json
                 }
     except Exception as e:
         log(f"[ERROR] get_admin_stats failed: {e}")
@@ -919,6 +921,86 @@ async def show_admin_dashboard(request: Request):
                         <span class="stat-num" style="font-size: 20px; padding: 14px 0;">{stats['hotspot']}</span>
                         <span class="stat-label"><i class="fas fa-map-marker-alt"></i> Top Location</span>
                     </div>
+                </div>
+
+                <!-- ══ GLOBAL LEAD HEATMAP ══ -->
+                <div class="glass-panel" style="margin-bottom: 40px; padding: 40px; position: relative; min-height: 400px; overflow: hidden; background: var(--panel-bg); border: 2px solid var(--glass-border); border-radius: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; position: relative; z-index: 5;">
+                        <div>
+                            <h3 style="color: var(--gold); font-family: 'Cinzel'; font-size: 18px; margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase;">Global Lead Heatmap</h3>
+                            <p style="color: var(--text-muted); font-size: 13px;">Market density pulse indicators across geographic financial hubs.</p>
+                        </div>
+                        <div style="background: rgba(212,168,83,0.1); padding: 8px 16px; border-radius: 12px; border: 1px solid var(--gold-thin);">
+                            <span style="color: var(--gold); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">Elite Command Mode</span>
+                        </div>
+                    </div>
+                    
+                    <div id="leadMap" style="width: 100%; height: 350px; background: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg') center/contain no-repeat; opacity: 0.12; filter: invert(1) brightness(0.6); margin-top: 20px;"></div>
+                    <div id="mapOverlay" style="position: absolute; inset: 120px 40px 40px; pointer-events: none;"></div>
+
+                    <script>
+                        (function() {{
+                            const locationData = {stats['location_json']};
+                            const overlay = document.getElementById('mapOverlay');
+                            if(!overlay) return;
+
+                            // High-tech Coordinate Library for Financial Hubs
+                            const COORDS = {{
+                                "Mumbai": {{ x: 71.5, y: 55.5 }},
+                                "Surat": {{ x: 70.8, y: 54.2 }},
+                                "Dubai": {{ x: 62.2, y: 53.5 }},
+                                "London": {{ x: 48.5, y: 35.2 }},
+                                "New York": {{ x: 28.2, y: 42.1 }},
+                                "Singapore": {{ x: 78.5, y: 64.2 }},
+                                "Abu Dhabi": {{ x: 61.8, y: 54.1 }},
+                                "Ahmedabad": {{ x: 70.5, y: 52.8 }},
+                                "Zurich": {{ x: 51.2, y: 38.5 }},
+                                "Doha": {{ x: 62.8, y: 54.5 }},
+                                "Kenya": {{ x: 58.5, y: 68.2 }},
+                                "Riyadh": {{ x: 60.5, y: 55.2 }},
+                                "Gujarat": {{ x: 70.8, y: 54.2 }}
+                            }};
+
+                            Object.keys(locationData).forEach(loc => {{
+                                const cleanLoc = loc.split(',')[0].split(' ')[0].trim();
+                                const pos = COORDS[cleanLoc];
+                                if (pos) {{
+                                    const pin = document.createElement('div');
+                                    pin.className = 'map-pin';
+                                    pin.style.left = pos.x + '%';
+                                    pin.style.top = pos.y + '%';
+                                    pin.innerHTML = `
+                                        <div class="pin-pulse"></div>
+                                        <div class="pin-dot"></div>
+                                        <div class="pin-label">${{loc}} (${{locationData[loc]}})</div>
+                                    `;
+                                    overlay.appendChild(pin);
+                                }}
+                            }});
+                        }})();
+                    </script>
+                    
+                    <style>
+                        .map-pin {{ position: absolute; width: 14px; height: 14px; transform: translate(-50%, -50%); pointer-events: auto; cursor: crosshair; z-index: 10; }}
+                        .pin-dot {{ width: 8px; height: 8px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 15px var(--gold); border: 2px solid #000; }}
+                        .pin-pulse {{ 
+                            position: absolute; inset: -15px; border: 2px solid var(--gold); border-radius: 50%;
+                            animation: pin-pulse 2.5s infinite ease-out; opacity: 0;
+                        }}
+                        @keyframes pin-pulse {{
+                            0% {{ transform: scale(0.4); opacity: 0.9; }}
+                            100% {{ transform: scale(4); opacity: 0; }}
+                        }}
+                        .pin-label {{ 
+                            position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+                            white-space: nowrap; font-size: 10px; font-weight: 800; color: #000;
+                            background: var(--gold); padding: 5px 12px; border-radius: 8px;
+                            opacity: 0; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); pointer-events: none;
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                        }}
+                        .map-pin:hover .pin-label {{ opacity: 1; transform: translateX(-50%) translateY(5px); }}
+                        .map-pin:hover .pin-dot {{ transform: scale(1.5); background: #fff; }}
+                    </style>
                 </div>
 
                 <div class="search-container">

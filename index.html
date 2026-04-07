@@ -241,13 +241,45 @@ body {
   line-height: 1.5;
 }
 
-/* Section headings: editorial serif italic */
-.eid-heading {
-  font-family: 'Cormorant Garamond', serif;
-  font-weight: 300;
-  font-style: italic;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+/* ══ INSTITUTIONAL DOCUMENT VAULT ══ */
+.vault-verifying {
+  position: relative;
+  overflow: hidden;
+}
+.vault-verifying::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212,168,83,0.1), transparent);
+  animation: vault-scan 1.5s infinite;
+}
+@keyframes vault-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.vault-secure-tick {
+  color: var(--gold);
+  font-weight: 800;
+  animation: vault-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-block;
+  margin-right: 8px;
+}
+@keyframes vault-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1.1); }
+}
+.vault-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(212,168,83,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  display: inline-block;
+  animation: vault-spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes vault-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ══ MARKET TICKER — dark background ══ */
@@ -7271,42 +7303,70 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     const card = document.getElementById(cardId);
     const status = document.getElementById(statusId);
     const prev = document.getElementById(prevId);
+    
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('File too large — maximum size is 5 MB per file.');
-      input.value = ''; return;
+
+    // ELITE VALIDATION: 10MB Limit
+    const MAX_SIZE = 10 * 1024 * 1024; 
+    if (file.size > MAX_SIZE) {
+      showToast('Institutional Security Alert: File exceeds 10MB limit.');
+      input.value = ''; 
+      card.classList.remove('vault-verifying');
+      return;
     }
+
+    // Start "Verifying" State
+    card.classList.add('vault-verifying');
+    status.innerHTML = '<span class="vault-spinner"></span> Securely Scanning...';
+
     const docKey = input.name;
     const reader = new FileReader();
+
     reader.onload = function(e) {
-      _uploadedFiles[docKey] = { name: file.name, type: file.type, data: e.target.result };
-      status.textContent = '\u2713 ' + file.name.substring(0, 18) + (file.name.length > 18 ? '\u2026' : '');
-      if (file.type.startsWith('image/')) {
-        prev.src = e.target.result;
-      } else {
-        prev.src = '';
-      }
-      card.classList.add('uploaded');
-      if (typeof updateRegProgress === 'function') updateRegProgress();
-      // Add remove btn if not present
-      if (!card.querySelector('.reg-upload-remove')) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'reg-upload-remove';
-        btn.innerHTML = '&times;';
-        btn.onclick = function(ev) {
-          ev.stopPropagation();
-          input.value = '';
-          delete _uploadedFiles[docKey];
-          card.classList.remove('uploaded');
-          prev.src = '';
-          status.textContent = 'Tap to upload';
-          btn.remove();
-          if (typeof updateRegProgress === 'function') updateRegProgress();
-        };
-        card.appendChild(btn);
-      }
+      // Small artificial delay to show the "Elite" scanning process
+      setTimeout(() => {
+        _uploadedFiles[docKey] = { name: file.name, type: file.type, data: e.target.result };
+        
+        // Success State
+        card.classList.remove('vault-verifying');
+        card.classList.add('uploaded');
+        
+        status.innerHTML = '<span class="vault-secure-tick">[✔]</span> ' + file.name.substring(0, 15) + (file.name.length > 15 ? '...' : '') + ' <small style="opacity:0.6; font-size:9px;">SECURE</small>';
+        
+        if (file.type.startsWith('image/')) {
+          prev.src = e.target.result;
+        } else {
+          prev.src = ''; // PDF placeholder could go here
+        }
+
+        if (typeof updateRegProgress === 'function') updateRegProgress();
+
+        // Add remove btn if not present
+        if (!card.querySelector('.reg-upload-remove')) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'reg-upload-remove';
+          btn.innerHTML = '&times;';
+          btn.onclick = function(ev) {
+            ev.stopPropagation();
+            input.value = '';
+            delete _uploadedFiles[docKey];
+            card.classList.remove('uploaded');
+            prev.src = '';
+            status.textContent = 'Tap to upload';
+            btn.remove();
+            if (typeof updateRegProgress === 'function') updateRegProgress();
+          };
+          card.appendChild(btn);
+        }
+      }, 800);
     };
+    
+    reader.onerror = function() {
+      card.classList.remove('vault-verifying');
+      showError('reg-error', 'System Error: Could not verify document. Please try again.');
+    };
+
     reader.readAsDataURL(file);
   }
 
