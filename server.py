@@ -30,7 +30,7 @@ from email.mime.application import MIMEApplication
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -173,6 +173,8 @@ app = FastAPI(title="WhiteFlows", version="4.0-js-pdf", lifespan=lifespan)
 _ALLOWED_ORIGINS = [
     "https://whiteflows.com",
     "https://www.whiteflows.com",
+    "https://whiteflowsint.com",
+    "https://www.whiteflowsint.com",
     "http://localhost:8001",   # local development
     "http://127.0.0.1:8001",  # local development
 ]
@@ -233,6 +235,14 @@ async def _rate_limit_cleanup_loop():
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    return FileResponse(BASE_DIR / "robots.txt")
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    return FileResponse(BASE_DIR / "sitemap.xml")
 
 
 def log(message: str):
