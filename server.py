@@ -639,7 +639,11 @@ async def get_admin_stats():
                     try:
                         data = json.loads(row[0])
                         loc = data.get("Client Location", "Unknown")
-                        if loc not in ["Local Development", "Unknown Location", "N/A"]:
+                        # MAPPING: For Elite Testing, map Local Dev to your CURRENT HUB (Limbdi)
+                        if loc == "Local Development":
+                            loc = "Limbdi"
+                        
+                        if loc not in ["Unknown Location", "N/A"]:
                             locations_raw.append(loc)
                     except: pass
                 
@@ -946,6 +950,7 @@ async def show_admin_dashboard(request: Request):
 
                             // High-tech Coordinate Library for Financial Hubs
                             const COORDS = {{
+                                "Limbdi": {{ x: 70.3, y: 53.6 }},
                                 "Mumbai": {{ x: 71.5, y: 55.5 }},
                                 "Surat": {{ x: 70.8, y: 54.2 }},
                                 "Dubai": {{ x: 62.2, y: 53.5 }},

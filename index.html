@@ -282,6 +282,17 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Force Verified Status to Gold (Elite Overrides) */
+.reg-upload-card.uploaded .reg-upload-status {
+  color: var(--gold) !important;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.vault-secure-tick {
+  color: var(--gold) !important;
+  filter: drop-shadow(0 0 5px rgba(212,168,83,0.4));
+}
+
 /* ══ MARKET TICKER — dark background ══ */
 .market-ticker {
   position: fixed;
