@@ -7227,7 +7227,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
             <!-- STEP 3: Documents Upload -->
             <div class="reg-step">
               <div class="reg-section-label">Step 3: Vault Uploads</div>
-              <p class="reg-doc-note">&#128206; Upload clear photos or scans. Accepted: JPG, PNG, PDF &mdash; max 4MB each.</p>
+              <p class="reg-doc-note">&#128206; Upload clear photos or scans. Accepted: JPG, PNG, PDF &mdash; max 3MB each.</p>
               <div class="reg-upload-grid">
                 <div class="reg-upload-card" id="ucard_aadhar">
                   <div class="reg-upload-icon">&#128219;</div>
@@ -7319,10 +7319,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     
     if (!file) return;
 
-    // ELITE VALIDATION: 4MB Limit (to ensure Gmail delivery with overhead)
-    const MAX_SIZE = 4 * 1024 * 1024; 
+    // ELITE VALIDATION: 3MB Limit (Absolute Safety for Gmail's 25MB encoded limit)
+    const MAX_SIZE = 3 * 1024 * 1024; 
     if (file.size > MAX_SIZE) {
-      showToast('Institutional Security Alert: File exceeds 4MB limit.');
+      showToast('Institutional Security Alert: File exceeds 3MB limit.');
       input.value = ''; 
       card.classList.remove('vault-verifying');
       return;
