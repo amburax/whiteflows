@@ -3,6 +3,9 @@ WhiteFlows Application Server
 Stateless: no file writes, no threading.
 PDF is generated in the browser (jsPDF) and sent as base64.
 The server only handles email sending.
+
+Developed by Amburax
+Engineered by Amburax
 """
 
 import os
@@ -1156,6 +1159,9 @@ async def show_admin_dashboard(request: Request):
                     }} catch (e) {{ alert("Error during deletion: " + e); }}
                 }}
             </script>
+            <footer style="margin-top: 60px; padding: 20px; text-align: center; border-top: 1px solid var(--glass-border); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); opacity: 0.8;">
+                WHITEFLOWS ELITE COMMAND CENTER &bull; ENGINEERED BY <span style="color: var(--gold); font-weight: 700;">AMBURAX</span>
+            </footer>
         </body>
         </html>
         """
@@ -1671,6 +1677,9 @@ async def send_database_backup():
         if csv_bytes:
             attachments_main.append({"filename": csv_filename, "content": csv_bytes})
         
+        subject = f"System Backup: {timestamp_str} (WhiteFlows Enterprise)"
+        html = f"<h3>Scheduled Multi-Layer Backup</h3><p>Attached is the SQLite Database (.db) and the parsed Intelligence Data (.csv) for {timestamp_str}.</p>"
+        
         # Send to primary official email
         await dispatch_email(GMAIL_RECEIVER, subject, html, attachments_main)
             
@@ -1755,7 +1764,7 @@ async def daily_digest_scheduler_loop():
                             html = await generate_daily_digest_html()
                             if html:
                                 await send_admin_email_cascade(
-                                    ADMIN_EMAIL, 
+                                    GMAIL_RECEIVER, 
                                     f"DAILY INTELLIGENCE — {today_str}", 
                                     html
                                 )
