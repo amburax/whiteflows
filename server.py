@@ -1160,7 +1160,7 @@ async def show_admin_dashboard(request: Request):
                 }}
             </script>
             <footer style="margin-top: 60px; padding: 20px; text-align: center; border-top: 1px solid var(--glass-border); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); opacity: 0.8;">
-                WHITEFLOWS ELITE COMMAND CENTER &bull; ENGINEERED BY <span style="color: var(--gold); font-weight: 700;">AMBURAX</span>
+                WHITEFLOWS ELITE COMMAND CENTER &bull; ENGINEERED BY <a href="https://www.linkedin.com/company/amburax/about/" target="_blank" style="color: var(--gold); text-decoration: none; font-weight: 700;"><i class="fab fa-linkedin" style="margin-right: 4px;"></i>AMBURAX</a>
             </footer>
         </body>
         </html>
