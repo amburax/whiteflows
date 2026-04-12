@@ -13,7 +13,11 @@ server_logs.txt
 
 # Database
 whiteflows.db
+whiteflows_backup_*.db
 
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Office Temporary Files
+~$*
