@@ -1,6 +1,1 @@
-fastapi==0.110.1
-python-multipart==0.0.22
-starlette==0.37.2
-httpx==0.27.0
-PyJWT==2.8.0
-pydantic<2.0.0
+# Neutralized: dependencies are provided via the vendor/ directory to ensure pure-python compatibility.

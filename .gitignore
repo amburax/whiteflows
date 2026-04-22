@@ -2,6 +2,9 @@
 .env
 *.pyc
 __pycache__/
+.venv/
+.wrangler/
+.idea/
 
 # Test Data
 leads/
@@ -21,3 +24,6 @@ Thumbs.db
 
 # Office Temporary Files
 ~$*
+
+# Large binaries (not needed for deployment)
+*.docx
