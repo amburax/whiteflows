@@ -1,1 +1,9 @@
-# Neutralized: dependencies are provided via the vendor/ directory to ensure pure-python compatibility.
+fastapi
+uvicorn[standard]
+python-multipart
+aiosqlite
+python-jose[cryptography]
+python-dotenv
+httpx
+pydantic
+PyJWT

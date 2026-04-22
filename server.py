@@ -8,12 +8,6 @@ Developed by Amburax
 Engineered by Amburax
 """
 
-import sys
-import os
-
-# Application Logic
-# Environment isolation is handled by the server.py bootloader.
-
 import os
 import io
 import time
@@ -22,211 +16,138 @@ import re
 import hashlib
 import traceback
 import mimetypes
-# Non-standard imports moved inside functions to bypass Cloudflare Build Validation (Error 10021)
-# import jwt
-try:
-    import sqlite3
-except ImportError:
-    sqlite3 = None
-
+import aiosqlite
+import jwt
+import sqlite3
 import json
-
-try:
-    import socket
-except ImportError:
-    socket = None
-
+import socket
 import csv
-from typing import Optional, Union, List
+from typing import Optional
+import smtplib
 from pathlib import Path
 from datetime import datetime, timedelta
 import asyncio
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
-try:
-    import uvicorn
-except ImportError:
-    uvicorn = None
-from wf_fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from wf_fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, FileResponse
-from wf_fastapi.staticfiles import StaticFiles
-from wf_pydantic import BaseModel
-from wf_fastapi.middleware.cors import CORSMiddleware
-from wf_fastapi.middleware.gzip import GZipMiddleware
-try:
-    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-    from dotenv import load_dotenv
-except ImportError:
-    ProxyHeadersMiddleware = None
-    load_dotenv = None
-# import httpx
+import uvicorn
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from dotenv import load_dotenv
+import httpx
 
-# Optional import for local development only
-try:
-    import aiosqlite
-except ImportError:
-    aiosqlite = None
-
-# Load environment variables (locally only)
-if load_dotenv:
-    load_dotenv()
+# Load environment variables
+load_dotenv()
 
 # Configuration
-ADMIN_EMAIL_MAIN  = os.environ.get('GMAIL_SENDER',   'advisory@whiteflowsint.com')
-ADMIN_EMAIL_RECV  = os.environ.get('GMAIL_RECEIVER', 'advisory@whiteflowsint.com')
+# Brevo API / SMTP Config
+GMAIL_SENDER   = os.environ.get('GMAIL_SENDER',   'your-email@gmail.com')
+GMAIL_PASSWORD = os.environ.get('GMAIL_PASSWORD', 'your-app-password')
+GMAIL_RECEIVER = os.environ.get('GMAIL_RECEIVER', 'recipient-email@gmail.com')
 BREVO_API_KEY  = os.environ.get('BREVO_API_KEY', '')
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+BREVO_SMTP_KEY = os.environ.get('BREVO_SMTP_KEY', '')
+BREVO_LOGIN    = os.environ.get('BREVO_LOGIN', 'a72c85001@smtp-brevo.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'whiteflows2026')
 BACKUP_RECEIVER_EMAIL = os.environ.get('BACKUP_RECEIVER_EMAIL', '')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 
 # Setup paths (for static assets and database)
 BASE_DIR = Path(__file__).parent
 DATABASE_PATH = os.environ.get("DATABASE_PATH", str(BASE_DIR / "whiteflows.db"))
 LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", str(BASE_DIR / "server_logs.txt"))
 
-# ─── DATABASE ADAPTER (LOCAL vs CLOUDFLARE) ──────────────────────────────────
 
-class DBAdapter:
-    """Bridges the gap between local aiosqlite and Cloudflare D1."""
-    def __init__(self, request_env=None):
-        self.worker_env = request_env
-        self.is_worker = request_env is not None and hasattr(request_env, "DB")
-
-    async def execute(self, query: str, params: tuple = ()):
-        if self.is_worker:
-            # Cloudflare D1 Syntax
-            try:
-                stmt = self.worker_env.DB.prepare(query)
-                if params:
-                    stmt = stmt.bind(*params)
-                return await stmt.run()
-            except Exception as e:
-                log(f"[D1 ERROR] Execute: {e}")
-                raise e
-        else:
-            # Local aiosqlite
-            async with aiosqlite.connect(DATABASE_PATH) as conn:
-                async with conn.cursor() as curr:
-                    await curr.execute(query, params)
-                await conn.commit()
-
-    async def fetch_all(self, query: str, params: tuple = ()):
-        if self.is_worker:
-            stmt = self.worker_env.DB.prepare(query)
-            if params:
-                stmt = stmt.bind(*params)
-            # D1 returns a results object, we convert to familiar tuple format
-            res = await stmt.all()
-            if hasattr(res, 'results'):
-                # Handle different D1 response shapes
-                return [tuple(row.values()) for row in res.results]
-            return [tuple(row.values()) for row in res]
-        else:
-            async with aiosqlite.connect(DATABASE_PATH) as conn:
-                async with conn.cursor() as curr:
-                    await curr.execute(query, params)
-                    return await curr.fetchall()
-
-    async def fetch_one(self, query: str, params: tuple = ()):
-        if self.is_worker:
-            stmt = self.worker_env.DB.prepare(query)
-            if params:
-                stmt = stmt.bind(*params)
-            res = await stmt.first()
-            return tuple(res.values()) if res else None
-        else:
-            async with aiosqlite.connect(DATABASE_PATH) as conn:
-                async with conn.cursor() as curr:
-                    await curr.execute(query, params)
-                    return await curr.fetchone()
-
-def get_db(request: Request = None):
-    # Detection of Cloudflare Environment
+async def init_db():
+    """Initialises the local SQLite database."""
     try:
-        if request and hasattr(request, "scope") and "env" in request.scope:
-            return DBAdapter(request.scope["env"])
-    except: pass
-    return DBAdapter()
-
-
-async def init_db(db: DBAdapter = None):
-    """Initialises the local SQLite database (only for local mode). D1 is handled by schema.sql."""
-    db = db or get_db()
-    if db.is_worker:
-        return # D1 schema is handled at deploy time
-    
-    try:
-        # Leads Table
-        await db.execute('''
-            CREATE TABLE IF NOT EXISTS leads (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT,
-                email TEXT,
-                mobile TEXT,
-                json_data TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Applications Table
-        await db.execute('''
-            CREATE TABLE IF NOT EXISTS applications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                app_id TEXT UNIQUE,
-                applicant_name TEXT,
-                email TEXT,
-                mobile TEXT,
-                json_data TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Metadata Table
-        await db.execute("CREATE TABLE IF NOT EXISTS server_metadata (key TEXT PRIMARY KEY, value TEXT)")
-        log("[DB] Initialised locally.")
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # Leads Table
+                await curr.execute('''
+                    CREATE TABLE IF NOT EXISTS leads (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        email TEXT,
+                        mobile TEXT,
+                        json_data TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Applications Table
+                await curr.execute('''
+                    CREATE TABLE IF NOT EXISTS applications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        app_id TEXT UNIQUE,
+                        applicant_name TEXT,
+                        email TEXT,
+                        mobile TEXT,
+                        json_data TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Metadata Table
+                await curr.execute("CREATE TABLE IF NOT EXISTS server_metadata (key TEXT PRIMARY KEY, value TEXT)")
+                
+            await conn.commit()
+        log(f"[DB] Initialised: {DATABASE_PATH}")
     except Exception as e:
         log(f"[ERROR] init_db failed: {e}")
 
 
-async def save_lead(name, email, mobile, full_json, db: DBAdapter = None):
-    """Saves a lead to the database."""
-    db = db or get_db()
+async def save_lead(name, email, mobile, full_json):
+    """Saves a lead to the SQLite database."""
     try:
-        await db.execute(
-            "INSERT INTO leads (name, email, mobile, json_data) VALUES (?, ?, ?, ?)",
-            (name, email, mobile, json.dumps(full_json))
-        )
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "INSERT INTO leads (name, email, mobile, json_data) VALUES (?, ?, ?, ?)",
+                    (name, email, mobile, json.dumps(full_json))
+                )
+            await conn.commit()
         log(f"  [DB] Lead Saved: {name}")
     except Exception as e:
         log(f"[ERROR] save_lead failed: {e}")
 
 
-async def save_application(app_id, name, email, mobile, full_json, db: DBAdapter = None):
-    """Saves a full application to the database."""
-    db = db or get_db()
+async def save_application(app_id, name, email, mobile, full_json):
+    """Saves a full application to the SQLite database."""
     try:
         # Full data excluding heavy PDF/docs base64
         lite_json = {k:v for k,v in full_json.items() if k not in ["pdf_base64", "documents"]}
-        await db.execute(
-            "INSERT INTO applications (app_id, applicant_name, email, mobile, json_data) VALUES (?, ?, ?, ?, ?)",
-            (app_id, name, email, mobile, json.dumps(lite_json))
-        )
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "INSERT INTO applications (app_id, applicant_name, email, mobile, json_data) VALUES (?, ?, ?, ?, ?)",
+                    (app_id, name, email, mobile, json.dumps(lite_json))
+                )
+            await conn.commit()
         log(f"  [DB] Application Saved: {app_id}")
     except Exception as e:
         log(f"[ERROR] save_application failed: {e}")
 
 
-async def get_next_app_id(db: DBAdapter = None):
+async def get_next_app_id():
     """Generates a professional ID: WF-JAN-2026-001"""
-    db = db or get_db()
     try:
         now = datetime.now()
-        month_str = now.strftime('%b').upper()
+        month_str = now.strftime('%b').upper() # e.g. APR
         year_str = str(now.year)
         prefix = f"WF-{month_str}-{year_str}-"
         
-        # Query current count
-        row = await db.fetch_one("SELECT COUNT(*) FROM applications WHERE app_id LIKE ?", (f"{prefix}%",))
-        count = row[0] if row else 0
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # Count current applications for this specific month/year
+                await curr.execute("SELECT COUNT(*) FROM applications WHERE app_id LIKE ?", (f"{prefix}%",))
+                row = await curr.fetchone()
+                count = row[0]
         
         return f"{prefix}{str(count + 1).zfill(3)}"
     except Exception as e:
@@ -238,7 +159,7 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Modern FastAPI lifespan handler — replaces deprecated @app.on_event('startup')."""
+    """Modern FastAPI lifespan handler ΓÇö replaces deprecated @app.on_event('startup')."""
     validate_environment()
     await init_db()
     asyncio.create_task(backup_scheduler_loop())
@@ -252,10 +173,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="WhiteFlows", version="4.0-js-pdf", lifespan=lifespan)
 
 
-# CORS middleware — restrict to whiteflowsint.com only
+# CORS middleware ΓÇö restrict to whiteflows.com only
 _ALLOWED_ORIGINS = [
-    "https://whiteflowsint.com",
-    "https://www.whiteflowsint.com",
+    "https://whiteflows.com",
+    "https://www.whiteflows.com",
     "https://whiteflowsint.com",
     "https://www.whiteflowsint.com",
     "http://localhost:8001",   # local development
@@ -317,12 +238,7 @@ async def _rate_limit_cleanup_loop():
 
 
 # Mount static files
-# Optional Static Files
-STATIC_DIR = BASE_DIR / "static"
-if STATIC_DIR.exists() and STATIC_DIR.is_dir():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-else:
-    print("[SYSTEM] Static directory not found, skipping mount.")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 @app.get("/robots.txt", include_in_schema=False)
 async def robots_txt():
@@ -404,7 +320,7 @@ async def fetch_ip_location(ip: str) -> str:
         log(f"  [WARN] Geo IP lookup failed: {e}")
     return "Unknown Location"
 
-# ─── Routes ─────────────────────────────────────────────────────────────────
+# ΓöÇΓöÇΓöÇ Routes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
@@ -450,7 +366,7 @@ async def submit_application(request: Request, background_tasks: BackgroundTasks
             "nominee_pan":    data.get("nominee_pan", ""),
         }
 
-        log(f"[APPLICATION] New submission — {record['app_id']} from {record['applicant_name']} in {location}")
+        log(f"[APPLICATION] New submission ΓÇö {record['app_id']} from {record['applicant_name']} in {location}")
 
         # Persistent Logging: Save to SQLite (non-blocking)
         await save_application(record['app_id'], record['applicant_name'], record['email'], record['mobile'], data)
@@ -560,7 +476,10 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
         await save_lead(extracted_name, extracted_email, extracted_mobile, clean_data)
 
         # Send lead notification to admin
-        subject = f"New Enquiry — {extracted_name}"
+        subject = f"New Enquiry ΓÇö {extracted_name}"
+        
+        # Select primary sender for identity
+        from_email = BREVO_LOGIN if (BREVO_SMTP_KEY or BREVO_API_KEY) else GMAIL_SENDER
         
         # Build HTML table for text data only
         rows = ""
@@ -622,15 +541,15 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
         )
 
 
-# ─── Admin Dashboard Routes ──────────────────────────────────────────────────
+# ΓöÇΓöÇΓöÇ Admin Dashboard Routes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-# ─── Admin Dashboard Routes ──────────────────────────────────────────────────
+# ΓöÇΓöÇΓöÇ Admin Dashboard Routes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 import secrets as _secrets
-_jwt_env = os.environ.get("JWT_SECRET", "whiteflows_default_secure_secret_2026")  # Safe fallback to prevent Entropy Error
-JWT_SECRET = _jwt_env
-if not os.environ.get("JWT_SECRET"):
-    log("[SECURITY] WARNING: JWT_SECRET not set in env. Using default. Admin sessions will be stable but less secure. Set JWT_SECRET in Cloudflare Dashboard.")
+_jwt_env = os.environ.get("JWT_SECRET", "")
+JWT_SECRET = _jwt_env if _jwt_env else _secrets.token_hex(32)
+if not _jwt_env:
+    log("[SECURITY] WARNING: JWT_SECRET not set. Generated a random secret ΓÇö admin sessions will reset on every restart. Set JWT_SECRET in your .env for persistence.")
 
 
 def verify_jwt(request: Request) -> bool:
@@ -638,7 +557,6 @@ def verify_jwt(request: Request) -> bool:
     if not token:
         return False
     try:
-        import jwt
         from datetime import timezone
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         return payload.get("sub") == "admin"
@@ -648,7 +566,6 @@ def verify_jwt(request: Request) -> bool:
     except jwt.InvalidTokenError:
         return False
 
-@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin-dashboard-logs", response_class=HTMLResponse)
 async def admin_login_page(request: Request):
     """Simple login page for the admin dashboard."""
@@ -672,7 +589,7 @@ async def admin_login_page(request: Request):
     <body>
         <div class="login-box">
             <h2>Admin Login</h2>
-            <form action="/admin/login" method="post">
+            <form action="/admin-login" method="post">
                 <input type="password" name="password" placeholder="Enter Password" required>
                 <button type="submit">Access Dashboard</button>
             </form>
@@ -682,133 +599,102 @@ async def admin_login_page(request: Request):
     """)
 
 
-@app.post("/admin/login")
+@app.post("/admin-login")
 async def admin_login(request: Request):
-    """
-    Bank-grade security: JWT session issuance.
-    """
-    import jwt
-    try:
-        data = await request.json()
-        password = data.get("password")
-        
-        if password == ADMIN_PASSWORD:
-            token = jwt.encode({
-                "sub": "admin",
-                "exp": datetime.utcnow() + timedelta(minutes=30)
-            }, JWT_SECRET, algorithm="HS256")
-            
-            # Use DBAdapter for metadata
-            db = get_db(request)
-            await db.execute("INSERT OR REPLACE INTO server_metadata (key, value) VALUES ('last_admin_login', ?)", (datetime.now().isoformat(),))
-            
-            return {"success": True, "token": token}
-        
-        return JSONResponse({"success": False, "message": "Access Denied"}, status_code=401)
-    except Exception as e:
-        log(f"[ERROR] login failed: {e}")
-        return JSONResponse({"success": False, "message": "Server error"}, status_code=500)
+    """Handles login and sets a secure cookie."""
+    form_data = await request.form()
+    pwd = (form_data.get("password") or "").strip()
+    
+    # Use .strip() to avoid hidden space issues from .env
+    target_pwd = ADMIN_PASSWORD.strip() if ADMIN_PASSWORD else "whiteflows2026"
+    
+    if pwd == target_pwd:
+        # Create a RedirectResponse to the dashboard
+        response = RedirectResponse(url="/admin-dashboard-logs", status_code=303)
+        # Create JWT token valid for 30 minutes (Bank-Grade Strictness)
+        from datetime import timedelta, timezone
+        expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+        token_payload = {
+            "sub": "admin",
+            "exp": expire
+        }
+        token_str = jwt.encode(token_payload, JWT_SECRET, algorithm="HS256")
+        response.set_cookie(key="wf_session", value=token_str, httponly=True)
+        return response
+    else:
+        log(f"  [LOGIN] Failed attempt: {pwd[:2]}***")
+        return HTMLResponse(content="<script>alert('Incorrect Password'); window.history.back();</script>", status_code=401)
 
 
-@app.get("/admin/applications")
-async def get_applications(request: Request):
-    verify_jwt(request)
-    db = get_db(request)
-    try:
-        rows = await db.fetch_all("SELECT id, app_id, applicant_name, email, mobile, json_data, created_at FROM applications ORDER BY created_at DESC")
-        apps = []
-        for r in rows:
-            apps.append({
-                "id": r[0], "app_id": r[1], "name": r[2], 
-                "email": r[3], "mobile": r[4], 
-                "data": json.loads(r[5]) if r[5] else {}, 
-                "created_at": r[6]
-            })
-        return apps
-    except Exception as e:
-        log(f"[ERROR] get_applications failed: {e}")
-        return []
-
-
-@app.get("/admin/leads")
-async def get_leads(request: Request):
-    verify_jwt(request)
-    db = get_db(request)
-    try:
-        rows = await db.fetch_all("SELECT id, name, email, mobile, json_data, created_at FROM leads ORDER BY created_at DESC")
-        leads = []
-        for r in rows:
-            leads.append({
-                "id": r[0], "name": r[1], "email": r[2], 
-                "mobile": r[3], "data": json.loads(r[4]) if r[4] else {}, 
-                "created_at": r[5]
-            })
-        return leads
-    except Exception as e:
-        log(f"[ERROR] get_leads failed: {e}")
-        return []
-
-
-async def get_admin_stats(db: DBAdapter):
+async def get_admin_stats():
     """Calculates key performance metrics for the admin dashboard with optimized logic."""
     try:
-        # 1. Total Leads
-        row_leads = await db.fetch_one("SELECT COUNT(*) FROM leads")
-        total_leads = row_leads[0] if row_leads else 0
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # 1. Total Leads
+                await curr.execute("SELECT COUNT(*) FROM leads")
+                total_leads = (await curr.fetchone())[0]
 
-        # 2. Total Applications
-        row_apps = await db.fetch_one("SELECT COUNT(*) FROM applications")
-        total_apps = row_apps[0] if row_apps else 0
+                # 2. Total Applications
+                await curr.execute("SELECT COUNT(*) FROM applications")
+                total_apps = (await curr.fetchone())[0]
 
-        # 3. Momentum (Last 24 Hours)
-        last_24h = (datetime.now() - timedelta(hours=24)).isoformat()
-        row_momentum = await db.fetch_one("SELECT COUNT(*) FROM leads WHERE created_at >= ?", (last_24h,))
-        momentum = row_momentum[0] if row_momentum else 0
+                # 3. Monthly Momentum (Last 24 Hours)
+                # Using SQLite compatible timestamp comparison
+                last_24h = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+                await curr.execute("SELECT COUNT(*) FROM leads WHERE created_at >= ?", (last_24h,))
+                momentum = (await curr.fetchone())[0]
 
-        # 4. Global Hotspot
-        rows_loc = await db.fetch_all("SELECT json_data FROM leads")
-        
-        locations_raw = []
-        for row in rows_loc:
-            try:
-                data = json.loads(row[0])
-                loc = data.get("Client Location", "Unknown")
-                if loc == "Local Development": loc = "Limbdi"
-                if loc not in ["Unknown Location", "N/A"]:
-                    locations_raw.append(loc)
-            except: pass
-        
-        from collections import Counter
-        location_counts = Counter(locations_raw)
-        hotspot = location_counts.most_common(1)[0][0] if locations_raw else "Global Network"
-        location_json = json.dumps(dict(location_counts))
+                # 4. Global Hotspot & Location Data for Heatmap
+                await curr.execute("SELECT json_data FROM leads")
+                rows = await curr.fetchall()
+                locations_raw = []
+                for row in rows:
+                    try:
+                        data = json.loads(row[0])
+                        loc = data.get("Client Location", "Unknown")
+                        # MAPPING: For Elite Testing, map Local Dev to your CURRENT HUB (Limbdi)
+                        if loc == "Local Development":
+                            loc = "Limbdi"
+                        
+                        if loc not in ["Unknown Location", "N/A"]:
+                            locations_raw.append(loc)
+                    except: pass
+                
+                from collections import Counter
+                location_counts = Counter(locations_raw)
+                hotspot = location_counts.most_common(1)[0][0] if locations_raw else "Global Network"
+                
+                # Pass full location data for the heatmap
+                location_json = json.dumps(dict(location_counts))
 
-        return {
-            "total_leads": total_leads,
-            "total_apps": total_apps,
-            "momentum": momentum,
-            "hotspot": hotspot,
-            "location_json": location_json
-        }
+                return {
+                    "total_leads": total_leads,
+                    "total_apps": total_apps,
+                    "momentum": momentum,
+                    "hotspot": hotspot,
+                    "location_json": location_json
+                }
     except Exception as e:
         log(f"[ERROR] get_admin_stats failed: {e}")
-        return {"total_leads": 0, "total_apps": 0, "momentum": 0, "hotspot": "Global Reach", "location_json": "{}"}
+        return {"total_leads": 0, "total_apps": 0, "momentum": 0, "hotspot": "Global Reach"}
 
 
-@app.get("/admin/dashboard", response_class=HTMLResponse)
 async def show_admin_dashboard(request: Request):
     """The actual dashboard logic, separated for clean access."""
-    verify_jwt(request)
-    db = get_db(request)
     try:
-        # Get Leads
-        leads = await db.fetch_all("SELECT id, name, email, mobile, created_at, json_data FROM leads ORDER BY created_at DESC")
-        
-        # Get Applications
-        apps = await db.fetch_all("SELECT app_id, applicant_name, email, mobile, created_at FROM applications ORDER BY created_at DESC")
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # Get Leads
+                await curr.execute("SELECT id, name, email, mobile, created_at, json_data FROM leads ORDER BY created_at DESC")
+                leads = await curr.fetchall()
+                
+                # Get Applications
+                await curr.execute("SELECT app_id, applicant_name, email, mobile, created_at FROM applications ORDER BY created_at DESC")
+                apps = await curr.fetchall()
 
         # Fetch intelligence metrics
-        stats = await get_admin_stats(db)
+        stats = await get_admin_stats()
 
         def get_lead_source(js_str):
             try:
@@ -1022,7 +908,7 @@ async def show_admin_dashboard(request: Request):
                         <h1><i class="fas fa-shield-halved"></i> WhiteFlows Command Center</h1>
                     </div>
                     <div class="navbar-right">
-                        <div class="auto-timer"><span class="dot"></span> Live • <span id="timer">30s</span></div>
+                        <div class="auto-timer"><span class="dot"></span> Live ΓÇó <span id="timer">30s</span></div>
                         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
@@ -1055,7 +941,7 @@ async def show_admin_dashboard(request: Request):
                     </div>
                 </div>
 
-                <!-- ══ GLOBAL LEAD HEATMAP ══ -->
+                <!-- ΓòÉΓòÉ GLOBAL LEAD HEATMAP ΓòÉΓòÉ -->
                 <div class="glass-panel" style="margin-bottom: 40px; padding: 40px; position: relative; min-height: 400px; overflow: hidden; background: var(--panel-bg); border: 2px solid var(--glass-border); border-radius: 25px;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; position: relative; z-index: 5;">
                         <div>
@@ -1230,7 +1116,7 @@ async def show_admin_dashboard(request: Request):
                             // Create hidden expand row
                             const expandRow = document.createElement('tr');
                             expandRow.className = 'expand-row';
-                            expandRow.innerHTML = `<td colspan="6">📧 <strong>Email:</strong> ${{email}}<br>📱 <strong>Mobile:</strong> ${{mobile}}<br>📅 <strong>Date:</strong> ${{date}}<br>🏷️ <strong>Source:</strong> ${{source}}</td>`;
+                            expandRow.innerHTML = `<td colspan="6">≡ƒôº <strong>Email:</strong> ${{email}}<br>≡ƒô▒ <strong>Mobile:</strong> ${{mobile}}<br>≡ƒôà <strong>Date:</strong> ${{date}}<br>≡ƒÅ╖∩╕Å <strong>Source:</strong> ${{source}}</td>`;
                             row.classList.add('data-row');
                             row.insertAdjacentElement('afterend', expandRow);
                             // Toggle on click
@@ -1299,25 +1185,32 @@ class DeleteRequest(BaseModel):
 @app.post("/admin-delete")
 async def admin_delete(payload: DeleteRequest, request: Request):
     """Securely deletes a specific record permanently using JWT."""
-    verify_jwt(request)
-    db = get_db(request)
+    if not verify_jwt(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     
     try:
-        if payload.type == "lead":
-            await db.execute("DELETE FROM leads WHERE id = ?", (payload.id,))
-        elif payload.type == "app":
-            await db.execute("DELETE FROM applications WHERE app_id = ?", (payload.id,))
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                if payload.type == "lead":
+                    await curr.execute("DELETE FROM leads WHERE id = ?", (payload.id,))
+                elif payload.type == "app":
+                    await curr.execute("DELETE FROM applications WHERE app_id = ?", (payload.id,))
+            await conn.commit()
         return {"success": True}
     except Exception as e:
         log(f"[ERROR] Delete failed: {e}")
         return {"success": False, "error": str(e)}
 
-async def generate_export_csv_string(db: DBAdapter) -> str:
+async def generate_export_csv_string() -> str:
     """Generates a CSV string containing all leads and applications."""
     try:
-        # Fetch data
-        leads_raw = await db.fetch_all("SELECT 'LEAD' as type, name, email, mobile, created_at, json_data FROM leads")
-        apps_raw = await db.fetch_all("SELECT 'APP' as type, applicant_name, email, mobile, created_at, json_data FROM applications")
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # Fetch data
+                await curr.execute("SELECT 'LEAD' as type, name, email, mobile, created_at, json_data FROM leads")
+                leads_raw = await curr.fetchall()
+                await curr.execute("SELECT 'APP' as type, applicant_name, email, mobile, created_at, json_data FROM applications")
+                apps_raw = await curr.fetchall()
 
         combined = leads_raw + apps_raw
         
@@ -1330,7 +1223,10 @@ async def generate_export_csv_string(db: DBAdapter) -> str:
         
         combined.sort(key=lambda r: (r[0], get_sort_source(r)))
         
+        parsed_data = []
         all_keys = set()
+        
+        # We will iterate once to find all keys across all records
         for row in combined:
             try:
                 extra_data = json.loads(row[5]) if row[5] else {}
@@ -1339,51 +1235,76 @@ async def generate_export_csv_string(db: DBAdapter) -> str:
                         all_keys.add(str(k).replace('_', ' ').title())
             except: pass
 
-        headers = ["Type", "Name", "Email", "Mobile", "Timestamp"] + sorted(list(all_keys))
+        base_cols = ["Type", "Name", "Email", "Mobile", "Timestamp"]
+        extra_cols = sorted(list(all_keys))
+        headers = base_cols + extra_cols
         
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=headers)
         writer.writeheader()
         
         current_category = None
+        
         for row in combined:
             rtype = row[0]
             cat = get_sort_source(row) if rtype == 'LEAD' else "FULL APPLICATION"
             
+            # Insert a visual separator row when the category changes
             if cat != current_category:
-                writer.writerow({h: "" for h in headers}) # Spacer
-                writer.writerow({headers[0]: f"--- {cat.upper()} ---"}) 
+                writer.writerow({h: "" for h in headers}) # Empty spacer row
+                writer.writerow({headers[0]: f"--- {cat.upper()} ---"}) # Header row
                 current_category = cat
 
+            # Parse Timestamp
+            raw_ts = row[4]
+            clean_ts = raw_ts.replace('T', ' ')[:19] if (raw_ts and 'T' in raw_ts) else raw_ts
+                
             item = {
-                "Type": rtype, "Name": row[1], "Email": row[2], 
-                "Mobile": str(row[3]), "Timestamp": row[4].replace('T', ' ')[:19] if row[4] else ""
+                "Type": rtype, 
+                "Name": row[1], 
+                "Email": row[2], 
+                "Mobile": str(row[3]),
+                "Timestamp": clean_ts
             }
             
             try:
                 extra_data = json.loads(row[5]) if row[5] else {}
                 for k, v in extra_data.items():
                     nice_key = str(k).replace('_', ' ').title()
-                    if nice_key in headers: item[nice_key] = str(v)
+                    if nice_key in headers:
+                        item[nice_key] = str(v)
             except: pass
-            
-            writer.writerow({h: item.get(h, "") for h in headers})
+                
+            clean_item = {h: item.get(h, "") for h in headers}
+            writer.writerow(clean_item)
+        
+        return output.getvalue()
+    except Exception as e:
+        log(f"[ERROR] generate_export_csv_string failed: {e}")
+        raise eiter(output, fieldnames=headers)
+        writer.writeheader()
+        
+        for item in parsed_data:
+            clean_item = {h: item.get(h, "") for h in headers}
+            writer.writerow(clean_item)
         
         return output.getvalue()
     except Exception as e:
         log(f"[ERROR] generate_export_csv_string failed: {e}")
         raise e
 
-@app.get("/admin/export-csv")
+@app.get("/admin-export-csv")
 async def export_csv(request: Request):
     """Generates a CSV of all leads and applications with JSON data fully parsed into columns."""
-    verify_jwt(request)
-    db = get_db(request)
+    if not verify_jwt(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     try:
-        csv_string = await generate_export_csv_string(db)
+        csv_string = await generate_export_csv_string()
         filename = f"whiteflows_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        
         return StreamingResponse(
-            io.BytesIO(csv_string.encode()),
+            iter([csv_string]),
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
@@ -1397,7 +1318,7 @@ async def send_admin_email(record: dict, pdf_bytes: bytes, uploaded_docs: dict):
     Send application notification to admin with PDF receipt and uploaded documents.
     """
     app_id = record.get("app_id", "UNKNOWN")
-    subject = f"NEW APPLICATION — {record.get('applicant_name', 'Unknown')} [{app_id}]"
+    subject = f"NEW APPLICATION ΓÇö {record.get('applicant_name', 'Unknown')} [{app_id}]"
     
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
@@ -1442,98 +1363,78 @@ async def send_admin_email(record: dict, pdf_bytes: bytes, uploaded_docs: dict):
             })
 
     await dispatch_email(GMAIL_RECEIVER, subject, html, attachments)
-    log(f"  [OK] ADMIN EMAIL DISPATCHED — {app_id}")
+    log(f"  [OK] ADMIN EMAIL DISPATCHED ΓÇö {app_id}")
 
 
-async def dispatch_email(to_email: str, subject: str, html: str, attachments: list = None):
+async def send_client_email(client_email: str, client_name: str, app_id: str, pdf_bytes: bytes):
     """
-    Main Email Dispatcher:
-    1. Primary: Resend API
-    2. Fallback: Brevo API
+    Send confirmation email to client.
     """
-    attachments = attachments or []
-    # 1. Resend API
-    if await send_via_resend_api(to_email, subject, html, attachments):
-        return True
+    if not client_email: return
     
-    # 2. Brevo API
-    if await send_via_brevo_api(to_email, subject, html, attachments):
-        return True
-    
-    log(f"  [CRITICAL] All email dispatch methods failed for {to_email}")
-    return False
-
-
-async def generate_daily_digest_html(db: DBAdapter = None):
-    """Gathers intelligence from the last 24 hours and builds a professional summary."""
-    db = db or get_db()
-    try:
-        now = datetime.now()
-        yesterday = now - timedelta(days=1)
-        
-        # Leads Logic
-        leads = await db.fetch_all(
-            "SELECT id, name, email, json_data FROM leads WHERE created_at >= ?", 
-            (yesterday.isoformat(),)
-        )
-        
-        # Applications Logic
-        apps = await db.fetch_all(
-            "SELECT app_id, applicant_name, email FROM applications WHERE created_at >= ?", 
-            (yesterday.isoformat(),)
-        )
-
-        # Categorization Logic
-        summary = {}
-        for l in leads:
-            try:
-                js = json.loads(l[3]) if l[3] else {}
-                cat = js.get('form_name', 'Consultation')
-            except: cat = 'Consultation'
-            
-            if cat not in summary: summary[cat] = []
-            summary[cat].append(f"<li><b>{l[1]}</b> - {l[2]} ({l[3]})</li>")
-
-        lead_list_html = ""
-        for cat, items in summary.items():
-            lead_list_html += f"<h3>{cat}</h3><ul>{''.join(items)}</ul>"
-
-        app_list_html = "".join([f"<li><b>{a[0]}</b>: {a[1]} ({a[2]})</li>" for a in apps]) if apps else "<li>No full applications yesterday.</li>"
-
-        html = f"""
-        <html>
-        <body style="font-family: sans-serif; color: #0E0D0B; background: #F8F7F3; padding: 20px;">
-            <div style="max-width: 600px; margin: auto; background: #fff; padding: 40px; border: 1px solid #D4A853; border-radius: 8px;">
-                <h1 style="color: #D4A853; text-transform: uppercase;">Lead Intelligence Digest</h1>
-                <p style="color: #666;">Report for: {yesterday.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-                
-                <h2 style="color: #B88E3E;">Summary</h2>
-                <p>New Leads: <b>{len(leads)}</b></p>
-                <p>Full Applications: <b>{len(apps)}</b></p>
-                
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-                
-                <h2 style="color: #B88E3E;">New Enquiries by Category</h2>
-                {lead_list_html if leads else "<p>No new enquiries yesterday.</p>"}
-                
-                <h2 style="color: #B88E3E;">Priority Applications</h2>
-                <ul>{app_list_html}</ul>
-                
-                <p style="margin-top: 50px; font-size: 11px; color: #999;">Automated Daily Intelligence System — WhiteFlows Enterprise Security</p>
+    INK = "#1A1714"; GOLD = "#D4A853"; PEARL = "#FDFCF9"
+    subject = "Application Received ΓÇö WhiteFlows International"
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family:Arial,sans-serif;background:{PEARL};margin:0;padding:20px;color:{INK};">
+        <div style="max-width:600px;margin:auto;background:#fff;border:1px solid {GOLD};border-radius:4px;overflow:hidden;">
+            <div style="background:{INK};padding:40px 20px;text-align:center;border-bottom:3px solid {GOLD};">
+                <h1 style="color:{GOLD};margin:0;font-size:28px;letter-spacing:4px;text-transform:uppercase;">WhiteFlows</h1>
+                <p style="color:#E8C88A;margin:8px 0 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;">A Legacy of 37 Years in Wealth Creation</p>
             </div>
-        </body>
-        </html>
-        """
-        return html
-    except Exception as e:
-        log(f"[ERROR] generate_daily_digest_html failed: {e}")
-        return None
+            <div style="padding:50px 40px;line-height:1.8;">
+                <h2 style="color:{INK};font-size:20px;margin-top:0;">Dear {client_name},</h2>
+                <p style="font-size:15px;color:#444;">Thank you for choosing WhiteFlows International. We have successfully received your application.</p>
+                <p style="margin-top:40px;font-size:14px;color:{INK};">Best regards,<br/><strong style="color:{GOLD};">WhiteFlows Management</strong></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    attachments = []
+    if pdf_bytes:
+        attachments.append({
+            "filename": f"WhiteFlows_Receipt_{app_id}.pdf",
+            "content": pdf_bytes
+        })
+
+    await dispatch_email(client_email, subject, html, attachments)
+    log(f"  [OK] CLIENT EMAIL DISPATCHED to {client_email}")
+
+
+async def dispatch_email(to_email: str, subject: str, html: str, attachments: list):
+    """
+    4-Step Cascade: Resend API ??? Brevo SMTP ??? Brevo API ??? Gmail SMTP
+    Tries each method in order. Moves to next only if previous fails.
+    """
+    # Step 1: Resend API
+    if RESEND_API_KEY:
+        success = await send_via_resend_api(to_email, subject, html, attachments)
+        if success: return
+
+    # Step 2: Brevo SMTP
+    if BREVO_SMTP_KEY:
+        success = await send_via_brevo_smtp(to_email, subject, html, attachments)
+        if success:
+            return
+        log("  [CASCADE] Brevo SMTP failed, trying Brevo API...")
+
+    # Step 3: Brevo API
+    if BREVO_API_KEY:
+        success = await send_via_brevo_api(to_email, subject, html, attachments)
+        if success:
+            return
+        log("  [CASCADE] Brevo API failed, trying Gmail SMTP...")
+
+    # Step 4: Gmail SMTP (final fallback)
+    log("  [CASCADE] Falling back to Gmail SMTP...")
+    await send_via_gmail_smtp(to_email, subject, html, attachments)
 
 
 async def send_via_resend_api(to_email: str, subject: str, html: str, attachments: list):
     """Send via Resend HTTP API. Returns True on success, False on failure."""
-    import httpx
     if not RESEND_API_KEY: return False
     try:
         url = "https://api.resend.com/emails"
@@ -1570,9 +1471,99 @@ async def send_via_resend_api(to_email: str, subject: str, html: str, attachment
         return False
 
 
+
+async def generate_daily_digest_html():
+    """Gathers intelligence from the last 24 hours and builds a professional summary."""
+    try:
+        now = datetime.now()
+        yesterday = now - timedelta(days=1)
+        
+        async with aiosqlite.connect(DATABASE_PATH) as conn:
+            async with conn.cursor() as curr:
+                # Query leads from the last 24H
+                await curr.execute("SELECT name, email, mobile, json_data FROM leads WHERE created_at >= ?", (yesterday.isoformat(),))
+                leads = await curr.fetchall()
+                
+                # Query applications from the last 24H
+                await curr.execute("SELECT app_id, applicant_name, email FROM applications WHERE created_at >= ?", (yesterday.isoformat(),))
+                apps = await curr.fetchall()
+
+        # Categorization Logic
+        summary = {}
+        for l in leads:
+            try:
+                js = json.loads(l[3]) if l[3] else {}
+                cat = js.get('form_name', 'Consultation')
+            except: cat = 'Consultation'
+            
+            if cat not in summary: summary[cat] = []
+            summary[cat].append(f"<li><b>{l[0]}</b> - {l[1]} ({l[2]})</li>")
+
+        lead_list_html = ""
+        for cat, items in summary.items():
+            lead_list_html += f"<h3>{cat}</h3><ul>{''.join(items)}</ul>"
+
+        app_list_html = "".join([f"<li><b>{a[0]}</b>: {a[1]} ({a[2]})</li>" for a in apps]) if apps else "<li>No full applications yesterday.</li>"
+
+        html = f"""
+        <html>
+        <body style="font-family: sans-serif; color: #0E0D0B; background: #F8F7F3; padding: 20px;">
+            <div style="max-width: 600px; margin: auto; background: #fff; padding: 40px; border: 1px solid #D4A853; border-radius: 8px;">
+                <h1 style="color: #D4A853; text-transform: uppercase;">Lead Intelligence Digest</h1>
+                <p style="color: #666;">Report for: {yesterday.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+                
+                <h2 style="color: #B88E3E;">Summary</h2>
+                <p>New Leads: <b>{len(leads)}</b></p>
+                <p>Full Applications: <b>{len(apps)}</b></p>
+                
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+                
+                <h2 style="color: #B88E3E;">New Enquiries by Category</h2>
+                {lead_list_html if leads else "<p>No new enquiries yesterday.</p>"}
+                
+                <h2 style="color: #B88E3E;">Priority Applications</h2>
+                <ul>{app_list_html}</ul>
+                
+                <p style="margin-top: 50px; font-size: 11px; color: #999;">Automated Daily Intelligence System ΓÇö WhiteFlows Enterprise Security</p>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+    except Exception as e:
+        log(f"[ERROR] generate_daily_digest_html failed: {e}")
+        return None
+
+
+async def send_via_brevo_smtp(to_email: str, subject: str, html: str, attachments: list):
+    """Send via Brevo Pro SMTP Relay. Returns True on success, False on failure."""
+    try:
+        msg = MIMEMultipart()
+        msg["Subject"] = subject
+        msg["From"] = f"WhiteFlows <{GMAIL_SENDER}>"
+        msg["To"] = to_email
+        msg.attach(MIMEText(html, "html"))
+
+        for att in attachments:
+            part = MIMEApplication(att["content"])
+            part.add_header("Content-Disposition", "attachment", filename=att["filename"])
+            msg.attach(part)
+
+        with smtplib.SMTP("smtp-relay.brevo.com", 587) as server:
+            server.starttls()
+            server.login(BREVO_LOGIN, BREVO_SMTP_KEY)
+            server.sendmail(BREVO_LOGIN, to_email, msg.as_bytes())
+        log(f"  [OK] Brevo SMTP Success: {to_email}")
+        return True
+    except Exception as e:
+        log(f"  [ERROR] Brevo SMTP failed: {e}")
+        return False
+
+
+
 async def send_via_brevo_api(to_email: str, subject: str, html: str, attachments: list):
     """Send via Brevo HTTP API. Returns True on success, False on failure."""
-    import httpx
     try:
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
@@ -1589,7 +1580,7 @@ async def send_via_brevo_api(to_email: str, subject: str, html: str, attachments
             })
 
         payload = {
-            "sender": {"name": "WhiteFlows", "email": ADMIN_EMAIL_MAIN},
+            "sender": {"name": "WhiteFlows", "email": GMAIL_SENDER},
             "to": [{"email": to_email}],
             "subject": subject,
             "htmlContent": html,
@@ -1609,11 +1600,39 @@ async def send_via_brevo_api(to_email: str, subject: str, html: str, attachments
         return False
 
 
+
+async def send_via_gmail_smtp(to_email: str, subject: str, html: str, attachments: list):
+    """Fallback to Gmail SMTP."""
+    if GMAIL_PASSWORD == "your-app-password": return
+    try:
+        msg = MIMEMultipart()
+        msg["Subject"] = subject
+        msg["From"] = f"WhiteFlows <{GMAIL_SENDER}>"
+        msg["To"] = to_email
+        msg.attach(MIMEText(html, "html"))
+        for att in attachments:
+            part = MIMEApplication(att["content"])
+            part.add_header("Content-Disposition", "attachment", filename=att["filename"])
+            msg.attach(part)
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
+            smtp.sendmail(GMAIL_SENDER, to_email, msg.as_bytes())
+        log(f"  [OK] Gmail SMTP Success: {to_email}")
+    except Exception as e:
+        log(f"  [ERROR] Gmail SMTP failed: {e}")
+
+
 async def send_admin_email_cascade(to_email: str, subject: str, html: str, attachments: list):
-    """
-    Admin dispatcher using the shared 2-step cascade (Resend -> Brevo API).
-    """
-    return await dispatch_email(to_email, subject, html, attachments)
+    """Generic email cascade for admin notifications and leads."""
+    success = False
+    if BREVO_API_KEY:
+        success = await send_via_brevo_api(to_email, subject, html, attachments)
+    if not success and BREVO_SMTP_KEY and BREVO_LOGIN:
+        success = await send_via_brevo_smtp(to_email, subject, html, attachments)
+    if not success and GMAIL_SENDER and GMAIL_PASSWORD:
+        await send_via_gmail_smtp(to_email, subject, html, attachments)
+    return success
 
 
 async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app: bool = False):
@@ -1663,7 +1682,7 @@ async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app
             <div class="footer">
                 <p>&copy; 2026 WhiteFlows International. All Rights Reserved.</p>
                 <p>SEBI Registered Investment Advisory | Mumbai & Gujarat, India</p>
-                <p style="margin-top: 10px; font-style: italic;">This is an automated confirmation of Receipt. Our primary team will contact you from @whiteflowsint.com for all further documentation.</p>
+                <p style="margin-top: 10px; font-style: italic;">This is an automated confirmation of Receipt. Our primary team will contact you from @whiteflows.com for all further documentation.</p>
             </div>
         </div>
     </body>
@@ -1671,75 +1690,136 @@ async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app
     """
     
     # Send via shared cascade logic
-    await dispatch_email(to_email, subject, html, [])
+    await send_admin_email_cascade(to_email, subject, html, [])
     
     log(f"[AUTO-RESPONDER] Sent confirmation to {to_email} (Ref: {ref_id})")
 
 
-async def send_database_backup(db: DBAdapter):
+async def send_database_backup():
     try:
-        log("[BACKUP] Initiating backup sequence...")
+        log("[BACKUP] Initiating scheduled database backup sequence...")
         timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         
-        attachments = []
-        
-        # 1. CSV File (Universal)
-        try:
-            csv_str = await generate_export_csv_string(db)
-            attachments.append({"filename": f"whiteflows_backup_{timestamp_str}.csv", "content": csv_str.encode('utf-8')})
-        except Exception as e:
-            log(f"[WARNING] CSV backup failed: {e}")
+        # 1. Database File
+        db_filename = f"whiteflows_backup_{timestamp_str}.db"
+        db_path = os.path.join(os.path.dirname(DATABASE_PATH), db_filename)
+        import shutil
+        shutil.copy2(DATABASE_PATH, db_path)
+        with open(db_path, "rb") as f:
+            db_bytes = f.read()
 
-        # 2. Local DB Backup (Only if local)
-        if not db.is_worker:
-            try:
-                with open(DATABASE_PATH, "rb") as f:
-                    attachments.append({"filename": f"whiteflows_backup_{timestamp_str}.db", "content": f.read()})
-            except: pass
+        # 2. CSV File
+        csv_filename = f"whiteflows_backup_{timestamp_str}.csv"
+        try:
+            csv_str = await generate_export_csv_string()
+            csv_bytes = csv_str.encode('utf-8')
+        except Exception as e:
+            log(f"[WARNING] Failed to generate CSV backup: {e}")
+            csv_bytes = b""
             
-        subject = f"System Backup: {timestamp_str}"
-        html = f"<h3>Weekly Intelligence Backup</h3><p>Data summary for {timestamp_str} attached.</p>"
+        # Main email attachment block
+        attachments_main = [{"filename": db_filename, "content": db_bytes}]
+        if csv_bytes:
+            attachments_main.append({"filename": csv_filename, "content": csv_bytes})
         
-        await dispatch_email(GMAIL_RECEIVER, subject, html, attachments)
-        if BACKUP_RECEIVER_EMAIL:
-            await dispatch_email(BACKUP_RECEIVER_EMAIL, subject, html, attachments)
+        subject = f"System Backup: {timestamp_str} (WhiteFlows Enterprise)"
+        html = f"<h3>Scheduled Multi-Layer Backup</h3><p>Attached is the SQLite Database (.db) and the parsed Intelligence Data (.csv) for {timestamp_str}.</p>"
+        
+        # Send to primary official email
+        await dispatch_email(GMAIL_RECEIVER, subject, html, attachments_main)
             
-        log("[BACKUP] Sequence completed.")
+        # Send exclusively to the backup email (with server logs included)
+        if BACKUP_RECEIVER_EMAIL and BACKUP_RECEIVER_EMAIL != GMAIL_RECEIVER:
+            attachments_backup = list(attachments_main)
+            try:
+                log_path = BASE_DIR / "server_logs.txt"
+                if log_path.exists():
+                    with open(log_path, "rb") as fl:
+                        attachments_backup.append({"filename": "server_logs.txt", "content": fl.read()})
+            except Exception as e:
+                log(f"[WARNING] Could not attach server_logs.txt: {e}")
+                
+            await dispatch_email(BACKUP_RECEIVER_EMAIL, subject, html, attachments_backup)
+            
+        if os.path.exists(db_path):
+            os.remove(db_path)
+            
+        log("[BACKUP] Database & CSV backup completed and emailed successfully.")
         return True
     except Exception as e:
-        log(f"[ERROR] Backup failed: {e}")
+        log(f"[ERROR] Database backup failed: {e}")
         return False
 
-async def backup_scheduler_loop(db: DBAdapter = None):
-    db = db or get_db()
-    if db.is_worker: return
+
+async def backup_scheduler_loop():
+    """Runs continuously in the background, checking every hour if 3 days have passed since last backup."""
+    # Wait 10 seconds initially for server to fully boot
     await asyncio.sleep(10)
     while True:
         try:
-            row = await db.fetch_one("SELECT value FROM server_metadata WHERE key = 'last_backup'")
-            now = datetime.now()
-            if not row or (now - datetime.fromisoformat(row[0])).days >= 3:
-                if await send_database_backup(db):
-                    await db.execute("INSERT OR REPLACE INTO server_metadata (key, value) VALUES ('last_backup', ?)", (now.isoformat(),))
-        except: pass
+            async with aiosqlite.connect(DATABASE_PATH) as conn:
+                async with conn.cursor() as curr:
+                    await curr.execute("CREATE TABLE IF NOT EXISTS server_metadata (key TEXT PRIMARY KEY, value TEXT)")
+                    
+                    await curr.execute("SELECT value FROM server_metadata WHERE key = 'last_backup'")
+                    row = await curr.fetchone()
+                    
+                    needs_backup = False
+                    now = datetime.now()
+                    
+                    if row:
+                        last_backup = datetime.fromisoformat(row[0])
+                        if (now - last_backup).days >= 3:
+                            needs_backup = True
+                    else:
+                        # If no previous backup, backup immediately
+                        needs_backup = True
+                        
+                    if needs_backup:
+                        success = await send_database_backup()
+                        if success:
+                            await curr.execute("INSERT OR REPLACE INTO server_metadata (key, value) VALUES ('last_backup', ?)", (now.isoformat(),))
+                            await conn.commit()
+                            
+        except Exception as e:
+            log(f"[ERROR] Backup scheduler error: {e}")
+            
+        # Sleep for 1 hour
         await asyncio.sleep(3600)
 
-async def daily_digest_scheduler_loop(db: DBAdapter = None):
-    db = db or get_db()
-    if db.is_worker: return
+async def daily_digest_scheduler_loop():
+    """Triggers the intelligence digest every morning at 8:00 AM."""
+    # Delay first check slightly to let server stabilize
     await asyncio.sleep(20)
     while True:
         try:
             now = datetime.now()
+            # If it's between 8 AM and 9 AM
             if now.hour == 8:
-                today_str = now.strftime('%Y-%m-%d')
-                row = await db.fetch_one("SELECT value FROM server_metadata WHERE key = 'last_digest_date'")
-                if not row or row[0] != today_str:
-                    html = await generate_daily_digest_html(db)
-                    if html:
-                        await dispatch_email(GMAIL_RECEIVER, f"DAILY DIGEST — {today_str}", html)
-                        await db.execute("INSERT OR REPLACE INTO server_metadata (key, value) VALUES ('last_digest_date', ?)", (today_str,))
-        except: pass
+                async with aiosqlite.connect(DATABASE_PATH) as conn:
+                    async with conn.cursor() as curr:
+                        await curr.execute("CREATE TABLE IF NOT EXISTS server_metadata (key TEXT PRIMARY KEY, value TEXT)")
+                        
+                        await curr.execute("SELECT value FROM server_metadata WHERE key = 'last_digest_date'")
+                        row = await curr.fetchone()
+                        
+                        today_str = now.strftime('%Y-%m-%d')
+                        if not row or row[0] != today_str:
+                            log(f"[SYSTEM] Generating Daily Lead Intelligence Digest for {today_str}...")
+                            html = await generate_daily_digest_html()
+                            if html:
+                                await send_admin_email_cascade(
+                                    GMAIL_RECEIVER, 
+                                    f"DAILY INTELLIGENCE ΓÇö {today_str}", 
+                                    html
+                                )
+                                await curr.execute("INSERT OR REPLACE INTO server_metadata (key, value) VALUES ('last_digest_date', ?)", (today_str,))
+                                await conn.commit()
+                            
+        except Exception as e:
+            log(f"[ERROR] Daily digest scheduler error: {e}")
+            
+        # Check every 30 minutes
         await asyncio.sleep(1800)
 
 def validate_environment():
@@ -1747,7 +1827,7 @@ def validate_environment():
     warnings = []
     if ADMIN_PASSWORD == 'whiteflows2026':
         warnings.append("[SECURITY WARNING] ADMIN_PASSWORD is still 'whiteflows2026'. Change it before making this public!")
-    if 'your-email' in ADMIN_EMAIL_MAIN:
+    if 'your-email' in GMAIL_SENDER or 'your-app-password' in GMAIL_PASSWORD:
         warnings.append("[SECURITY WARNING] Gmail credentials perfectly match .env.example values. Email cascade will fail over!")
     if not BREVO_API_KEY and not BREVO_SMTP_KEY:
         warnings.append("[CONFIG WARNING] No Brevo keys provided. System relying solely on Gmail 500 emails/day quota.")
@@ -1759,9 +1839,4 @@ def validate_environment():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
-    if uvicorn:
-        uvicorn.run(app, host="0.0.0.0", port=port)
-
-# Entry point is in server.py
-
-
+    uvicorn.run(app, host="0.0.0.0", port=port)
