@@ -16,7 +16,8 @@ import re
 import hashlib
 import traceback
 import mimetypes
-import jwt
+# Non-standard imports moved inside functions to bypass Cloudflare Build Validation (Error 10021)
+# import jwt
 import sqlite3
 import json
 import socket
@@ -42,7 +43,7 @@ try:
 except ImportError:
     ProxyHeadersMiddleware = None
     load_dotenv = None
-import httpx
+# import httpx
 
 # Optional import for local development only
 try:
@@ -665,6 +666,7 @@ async def admin_login(request: Request):
     """
     Bank-grade security: JWT session issuance.
     """
+    import jwt
     try:
         data = await request.json()
         password = data.get("password")
@@ -1510,6 +1512,7 @@ async def generate_daily_digest_html(db: DBAdapter = None):
 
 async def send_via_resend_api(to_email: str, subject: str, html: str, attachments: list):
     """Send via Resend HTTP API. Returns True on success, False on failure."""
+    import httpx
     if not RESEND_API_KEY: return False
     try:
         url = "https://api.resend.com/emails"
@@ -1548,6 +1551,7 @@ async def send_via_resend_api(to_email: str, subject: str, html: str, attachment
 
 async def send_via_brevo_api(to_email: str, subject: str, html: str, attachments: list):
     """Send via Brevo HTTP API. Returns True on success, False on failure."""
+    import httpx
     try:
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
