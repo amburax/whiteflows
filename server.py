@@ -8,6 +8,15 @@ Developed by Amburax
 Engineered by Amburax
 """
 
+import sys
+import os
+
+# Ensure bundled libraries are prioritized
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VENDOR_DIR = os.path.join(BASE_DIR, "vendor")
+if VENDOR_DIR not in sys.path:
+    sys.path.insert(0, VENDOR_DIR)
+
 import os
 import io
 import time
