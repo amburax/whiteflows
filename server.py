@@ -307,7 +307,7 @@ STATIC_DIR = BASE_DIR / "static"
 if STATIC_DIR.exists() and STATIC_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 else:
-    log("[SYSTEM] Static directory not found, skipping mount.")
+    print("[SYSTEM] Static directory not found, skipping mount.")
 
 @app.get("/robots.txt", include_in_schema=False)
 async def robots_txt():
