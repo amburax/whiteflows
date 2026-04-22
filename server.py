@@ -1741,11 +1741,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port)
 
-# Entry point for Cloudflare Workers
-async def on_fetch(request, env):
-    # Diagnostic Log: Cloudflare Path Resolution
-    path = request.url if hasattr(request, "url") else "unknown"
-    print(f"[DEBUG] Fetch request for: {path}")
-    
-    import worker
-    return await worker.asgi.fetch(app, request, env)
