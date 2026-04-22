@@ -49,6 +49,7 @@ BREVO_API_KEY  = os.environ.get('BREVO_API_KEY', '')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'whiteflows2026')
 BACKUP_RECEIVER_EMAIL = os.environ.get('BACKUP_RECEIVER_EMAIL', '')
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+GOOGLE_SHEET_URL = os.environ.get('GOOGLE_SHEET_URL', '')
 
 # Setup paths (for static assets and database)
 BASE_DIR = Path(__file__).parent
@@ -406,6 +407,15 @@ async def submit_application(request: Request, background_tasks: BackgroundTasks
         # New Branded Elite Auto-Responder
         background_tasks.add_task(send_client_confirmation, record["email"], record["applicant_name"], record['app_id'], True)
 
+        # 5. Mirror to Google Sheets (Persistent Trial)
+        background_tasks.add_task(sync_to_google_sheet, 
+            record.get("applicant_name", ""), 
+            record.get("email", ""), 
+            record.get("mobile", ""), 
+            "Application", 
+            record
+        )
+
         return JSONResponse({
             "success": True,
             "app_id": record["app_id"],
@@ -529,6 +539,15 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
         # New Branded Elite Auto-Responder for Leads
         ref_id = f"REF-{hashlib.md5(str(time.time()).encode()).hexdigest()[:6].upper()}"
         background_tasks.add_task(send_client_confirmation, extracted_email, extracted_name, ref_id, False)
+
+        # 5. Mirror to Google Sheets (Persistent Trial)
+        background_tasks.add_task(sync_to_google_sheet,
+            extracted_name,
+            extracted_email,
+            extracted_mobile,
+            "Enquiry",
+            data
+        )
 
         return JSONResponse({
             "success": True,
@@ -1421,6 +1440,32 @@ async def send_client_email(client_email: str, client_name: str, app_id: str, pd
 
     await dispatch_email(client_email, subject, html, attachments)
     log(f"  [OK] CLIENT EMAIL DISPATCHED to {client_email}")
+
+
+async def sync_to_google_sheet(name: str, email: str, mobile: str, rtype: str = "Lead", full_json: dict = None):
+    """
+    Sends data to the Google Sheets mirror if configured.
+    This is an asynchronous, fail-silent mirror.
+    """
+    if not GOOGLE_SHEET_URL:
+        return
+    
+    try:
+        payload = {
+            "type": rtype,
+            "name": name,
+            "email": email,
+            "mobile": mobile,
+            "full_json": full_json
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(GOOGLE_SHEET_URL, json=payload)
+            if resp.status_code == 200:
+                log(f"[G-SHEET] Sync successful for {rtype}: {email}")
+            else:
+                log(f"[G-SHEET] WARNING: Sheet returned status {resp.status_code}")
+    except Exception as e:
+        log(f"[G-SHEET] ERROR: Synchronization failed: {e}")
 
 
 async def dispatch_email(to_email: str, subject: str, html: str, attachments: list):
