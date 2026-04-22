@@ -1,4 +1,4 @@
-name = "whiteflows-elite"
+name = "whiteflows-backend"
 main = "server.py"
 compatibility_date = "2024-04-03" # Updated to modern compatibility date
 compatibility_flags = ["python_workers"]

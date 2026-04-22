@@ -533,10 +533,6 @@ async def submit_lead(request: Request, background_tasks: BackgroundTasks):
         # Send lead notification to admin
         subject = f"New Enquiry — {extracted_name}"
         
-        # Select primary sender for identity
-    # Note: Using hardcoded verified sender domain in individual API callers
-    pass
-        
         # Build HTML table for text data only
         rows = ""
         for k, v in clean_data.items():
