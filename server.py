@@ -23,13 +23,9 @@ import json
 import socket
 import csv
 from typing import Optional
-import smtplib
 from pathlib import Path
 from datetime import datetime, timedelta
 import asyncio
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
@@ -48,11 +44,8 @@ load_dotenv()
 # Configuration
 # Brevo API / SMTP Config
 GMAIL_SENDER   = os.environ.get('GMAIL_SENDER',   'your-email@gmail.com')
-GMAIL_PASSWORD = os.environ.get('GMAIL_PASSWORD', 'your-app-password')
 GMAIL_RECEIVER = os.environ.get('GMAIL_RECEIVER', 'recipient-email@gmail.com')
 BREVO_API_KEY  = os.environ.get('BREVO_API_KEY', '')
-BREVO_SMTP_KEY = os.environ.get('BREVO_SMTP_KEY', '')
-BREVO_LOGIN    = os.environ.get('BREVO_LOGIN', 'a72c85001@smtp-brevo.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'whiteflows2026')
 BACKUP_RECEIVER_EMAIL = os.environ.get('BACKUP_RECEIVER_EMAIL', '')
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
@@ -1406,31 +1399,23 @@ async def send_client_email(client_email: str, client_name: str, app_id: str, pd
 
 async def dispatch_email(to_email: str, subject: str, html: str, attachments: list):
     """
-    4-Step Cascade: Resend API ??? Brevo SMTP ??? Brevo API ??? Gmail SMTP
-    Tries each method in order. Moves to next only if previous fails.
+    2-Step API Cascade: Resend API ??? Brevo API
+    Tries Resend first, then fallback to Brevo API. Pure HTTP-based for maximum reliability.
     """
     # Step 1: Resend API
     if RESEND_API_KEY:
         success = await send_via_resend_api(to_email, subject, html, attachments)
-        if success: return
+        if success: return True
 
-    # Step 2: Brevo SMTP
-    if BREVO_SMTP_KEY:
-        success = await send_via_brevo_smtp(to_email, subject, html, attachments)
-        if success:
-            return
-        log("  [CASCADE] Brevo SMTP failed, trying Brevo API...")
-
-    # Step 3: Brevo API
+    # Step 2: Brevo API
     if BREVO_API_KEY:
         success = await send_via_brevo_api(to_email, subject, html, attachments)
         if success:
-            return
-        log("  [CASCADE] Brevo API failed, trying Gmail SMTP...")
+            return True
+        log(f"  [CRITICAL] Brevo API failure for {to_email}")
 
-    # Step 4: Gmail SMTP (final fallback)
-    log("  [CASCADE] Falling back to Gmail SMTP...")
-    await send_via_gmail_smtp(to_email, subject, html, attachments)
+    log(f"  [CRITICAL] All email dispatch methods exhausted for {to_email}")
+    return False
 
 
 async def send_via_resend_api(to_email: str, subject: str, html: str, attachments: list):
@@ -1536,29 +1521,6 @@ async def generate_daily_digest_html():
         return None
 
 
-async def send_via_brevo_smtp(to_email: str, subject: str, html: str, attachments: list):
-    """Send via Brevo Pro SMTP Relay. Returns True on success, False on failure."""
-    try:
-        msg = MIMEMultipart()
-        msg["Subject"] = subject
-        msg["From"] = f"WhiteFlows <{GMAIL_SENDER}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html, "html"))
-
-        for att in attachments:
-            part = MIMEApplication(att["content"])
-            part.add_header("Content-Disposition", "attachment", filename=att["filename"])
-            msg.attach(part)
-
-        with smtplib.SMTP("smtp-relay.brevo.com", 587) as server:
-            server.starttls()
-            server.login(BREVO_LOGIN, BREVO_SMTP_KEY)
-            server.sendmail(BREVO_LOGIN, to_email, msg.as_bytes())
-        log(f"  [OK] Brevo SMTP Success: {to_email}")
-        return True
-    except Exception as e:
-        log(f"  [ERROR] Brevo SMTP failed: {e}")
-        return False
 
 
 
@@ -1600,39 +1562,26 @@ async def send_via_brevo_api(to_email: str, subject: str, html: str, attachments
         return False
 
 
+@app.get("/admin/test-email")
+async def admin_test_email(request: Request):
+    """Diagnostic endpoint to force a test email through the API cascade."""
+    decode_jwt(request) # Security check
+    test_subject = f"WhiteFlows Diagnostic Test ??? {datetime.now().strftime('%H:%M:%S')}"
+    test_html = "<h1>Email Cascade Test</h1><p>If you are reading this, your API-based email system is functioning correctly.</p>"
+    
+    success = await dispatch_email(GMAIL_RECEIVER, test_subject, test_html, [])
+    if success:
+        return {"success": True, "message": f"Test email successfully dispatched to {GMAIL_RECEIVER}"}
+    else:
+        return JSONResponse(status_code=500, content={"success": False, "error": "All dispatch methods failed. Check logs for details."})
 
-async def send_via_gmail_smtp(to_email: str, subject: str, html: str, attachments: list):
-    """Fallback to Gmail SMTP."""
-    if GMAIL_PASSWORD == "your-app-password": return
-    try:
-        msg = MIMEMultipart()
-        msg["Subject"] = subject
-        msg["From"] = f"WhiteFlows <{GMAIL_SENDER}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html, "html"))
-        for att in attachments:
-            part = MIMEApplication(att["content"])
-            part.add_header("Content-Disposition", "attachment", filename=att["filename"])
-            msg.attach(part)
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(GMAIL_SENDER, GMAIL_PASSWORD)
-            smtp.sendmail(GMAIL_SENDER, to_email, msg.as_bytes())
-        log(f"  [OK] Gmail SMTP Success: {to_email}")
-    except Exception as e:
-        log(f"  [ERROR] Gmail SMTP failed: {e}")
+
 
 
 async def send_admin_email_cascade(to_email: str, subject: str, html: str, attachments: list):
-    """Generic email cascade for admin notifications and leads."""
-    success = False
-    if BREVO_API_KEY:
-        success = await send_via_brevo_api(to_email, subject, html, attachments)
-    if not success and BREVO_SMTP_KEY and BREVO_LOGIN:
-        success = await send_via_brevo_smtp(to_email, subject, html, attachments)
-    if not success and GMAIL_SENDER and GMAIL_PASSWORD:
-        await send_via_gmail_smtp(to_email, subject, html, attachments)
-    return success
+    """Generic email cascade for admin notifications / leads utilizing the shared API dispatcher."""
+    return await dispatch_email(to_email, subject, html, attachments)
 
 
 async def send_client_confirmation(to_email: str, name: str, ref_id: str, is_app: bool = False):
@@ -1827,10 +1776,14 @@ def validate_environment():
     warnings = []
     if ADMIN_PASSWORD == 'whiteflows2026':
         warnings.append("[SECURITY WARNING] ADMIN_PASSWORD is still 'whiteflows2026'. Change it before making this public!")
-    if 'your-email' in GMAIL_SENDER or 'your-app-password' in GMAIL_PASSWORD:
-        warnings.append("[SECURITY WARNING] Gmail credentials perfectly match .env.example values. Email cascade will fail over!")
-    if not BREVO_API_KEY and not BREVO_SMTP_KEY:
-        warnings.append("[CONFIG WARNING] No Brevo keys provided. System relying solely on Gmail 500 emails/day quota.")
+    if 'your-email' in GMAIL_SENDER:
+        warnings.append("[SECURITY WARNING] GMAIL_SENDER perfectly matches .env.example values. Sender identity may fail verification!")
+    if not BREVO_API_KEY:
+        warnings.append("[CONFIG WARNING] No Brevo API Key provided. System relying solely on Resend API.")
+    if not RESEND_API_KEY:
+        warnings.append("[CONFIG WARNING] No Resend API Key provided. System relying solely on Brevo API.")
+    if not RESEND_API_KEY and not BREVO_API_KEY:
+         warnings.append("[CRITICAL ERROR] Neither Resend nor Brevo API keys are configured. All email sending will fail!")
         
     for w in warnings:
         log(w)
