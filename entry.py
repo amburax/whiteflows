@@ -1,12 +1,22 @@
-# Step-by-step reintegration
+# Diagnostic Path-Finder
+import sys
+import os
 from js import Response
 
 async def on_fetch(request, env):
     try:
-        # Try to import the server without using it yet
-        import server
-        return Response.new(f"IMPORT SUCCESS: server.py loaded! FastAPI version: {server.FastAPI.__module__ if hasattr(server, 'FastAPI') else 'unknown'}")
+        # Show all paths Python is currently looking in
+        paths = "\n".join(sys.path)
+        
+        # Try to find common hidden package directories
+        hidden_dirs = []
+        possible_spots = ["/requirements", "/site-packages", "/python-packages", "/app/requirements"]
+        for spot in possible_spots:
+            if os.path.exists(spot):
+                hidden_dirs.append(f"FOUND: {spot}")
+        
+        found_info = "\n".join(hidden_dirs) if hidden_dirs else "No common package dirs found."
+
+        return Response.new(f"DIAGNOSTIC INFO:\n\nSYS.PATH:\n{paths}\n\nPACKAGE SCAN:\n{found_info}")
     except Exception as e:
-        import traceback
-        error_info = traceback.format_exc()
-        return Response.new(f"IMPORT FAILED:\n\n{error_info}")
+        return Response.new(f"DIAGNOSTIC CRASH: {str(e)}")
