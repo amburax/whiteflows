@@ -622,6 +622,7 @@ def verify_jwt(request: Request) -> bool:
     except jwt.InvalidTokenError:
         return False
 
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin-dashboard-logs", response_class=HTMLResponse)
 async def admin_login_page(request: Request):
     """Simple login page for the admin dashboard."""
@@ -645,7 +646,7 @@ async def admin_login_page(request: Request):
     <body>
         <div class="login-box">
             <h2>Admin Login</h2>
-            <form action="/admin-login" method="post">
+            <form action="/admin/login" method="post">
                 <input type="password" name="password" placeholder="Enter Password" required>
                 <button type="submit">Access Dashboard</button>
             </form>
@@ -684,7 +685,7 @@ async def admin_login(request: Request):
 
 @app.get("/admin/applications")
 async def get_applications(request: Request):
-    decode_jwt(request)
+    verify_jwt(request)
     db = get_db(request)
     try:
         rows = await db.fetch_all("SELECT id, app_id, applicant_name, email, mobile, json_data, created_at FROM applications ORDER BY created_at DESC")
@@ -704,7 +705,7 @@ async def get_applications(request: Request):
 
 @app.get("/admin/leads")
 async def get_leads(request: Request):
-    decode_jwt(request)
+    verify_jwt(request)
     db = get_db(request)
     try:
         rows = await db.fetch_all("SELECT id, name, email, mobile, json_data, created_at FROM leads ORDER BY created_at DESC")
@@ -770,7 +771,7 @@ async def get_admin_stats(db: DBAdapter):
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def show_admin_dashboard(request: Request):
     """The actual dashboard logic, separated for clean access."""
-    decode_jwt(request)
+    verify_jwt(request)
     db = get_db(request)
     try:
         # Get Leads
@@ -1271,7 +1272,7 @@ class DeleteRequest(BaseModel):
 @app.post("/admin-delete")
 async def admin_delete(payload: DeleteRequest, request: Request):
     """Securely deletes a specific record permanently using JWT."""
-    decode_jwt(request)
+    verify_jwt(request)
     db = get_db(request)
     
     try:
@@ -1349,7 +1350,7 @@ async def generate_export_csv_string(db: DBAdapter) -> str:
 @app.get("/admin/export-csv")
 async def export_csv(request: Request):
     """Generates a CSV of all leads and applications with JSON data fully parsed into columns."""
-    decode_jwt(request)
+    verify_jwt(request)
     db = get_db(request)
     try:
         csv_string = await generate_export_csv_string(db)
@@ -1733,5 +1734,9 @@ if __name__ == "__main__":
 
 # Entry point for Cloudflare Workers
 async def on_fetch(request, env):
+    # Diagnostic Log: Cloudflare Path Resolution
+    path = request.url if hasattr(request, "url") else "unknown"
+    print(f"[DEBUG] Fetch request for: {path}")
+    
     import worker
     return await worker.asgi.fetch(app, request, env)
