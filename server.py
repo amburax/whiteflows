@@ -1769,7 +1769,7 @@ async def backup_scheduler_loop():
                     
                     if row:
                         last_backup = datetime.fromisoformat(row[0])
-                        if (now - last_backup).days >= 3:
+                        if (now - last_backup).days >= 1:
                             needs_backup = True
                     else:
                         # If no previous backup, backup immediately
