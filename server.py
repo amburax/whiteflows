@@ -618,6 +618,7 @@ def verify_jwt(request: Request) -> bool:
     if not token:
         return False
     try:
+        import jwt
         from datetime import timezone
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         return payload.get("sub") == "admin"
