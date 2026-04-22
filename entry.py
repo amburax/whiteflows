@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 # Global cache for the app
 _cached_app = None
@@ -6,18 +7,20 @@ _cached_app = None
 async def on_fetch(request, env):
     global _cached_app
     
-    if _cached_app is None:
-        # Lazy load the server module only when a request arrives
-        # This bypasses Cloudflare's build-time validation errors (10021)
-        import server
-        import worker
+    try:
+        import worker # Ensure worker is available for the response
+        if _cached_app is None:
+            # Lazy load the server module
+            import server
+            _cached_app = server.app
+            
+        return await worker.asgi.fetch(_cached_app, request, env)
         
-        # Initialize the app
-        _cached_app = server.app
-        
-        # Store for the ASGI shim
-        _asgi_shim = worker.asgi
-        
-    # Import inside fetch to ensure environment is ready
-    import worker
-    return await worker.asgi.fetch(_cached_app, request, env)
+    except Exception:
+        error_info = traceback.format_exc()
+        try:
+            import worker
+            return worker.types.Response(f"DEBUG ERROR:\n\n{error_info}", headers={"content-type": "text/plain"})
+        except:
+            # Absolute fallback if even worker fails
+            return b"Fatal Error in Entry Point. Check Logs."
