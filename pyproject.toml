@@ -1,0 +1,12 @@
+[project]
+name = "whiteflows-elite"
+version = "4.0.0"
+description = "WhiteFlows Elite Stateless API"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "PyJWT",
+]
+
+[tool.pywrangler]
+main = "worker.py"

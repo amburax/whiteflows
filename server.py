@@ -55,9 +55,16 @@ BASE_DIR = Path(__file__).parent
 DATABASE_PATH = os.environ.get("DATABASE_PATH", str(BASE_DIR / "whiteflows.db"))
 LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", str(BASE_DIR / "server_logs.txt"))
 
+# Stateless Detection: Workers don't have a writable filesystem for SQLite
+IS_WORKER = os.environ.get("PYTHON_WORKER") == "1" or os.environ.get("CF_PAGES") == "1"
+USE_DATABASE = not IS_WORKER
+
 
 async def init_db():
-    """Initialises the local SQLite database."""
+    """Initialises the local SQLite database if available."""
+    if not USE_DATABASE:
+        log("[SYSTEM] Running in Stateless Mode (No Database).")
+        return
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
@@ -96,7 +103,8 @@ async def init_db():
 
 
 async def save_lead(name, email, mobile, full_json):
-    """Saves a lead to the SQLite database."""
+    """Saves a lead to the SQLite database if enabled."""
+    if not USE_DATABASE: return
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
@@ -111,7 +119,8 @@ async def save_lead(name, email, mobile, full_json):
 
 
 async def save_application(app_id, name, email, mobile, full_json):
-    """Saves a full application to the SQLite database."""
+    """Saves a full application to the SQLite database if enabled."""
+    if not USE_DATABASE: return
     try:
         # Full data excluding heavy PDF/docs base64
         lite_json = {k:v for k,v in full_json.items() if k not in ["pdf_base64", "documents"]}
@@ -148,17 +157,19 @@ async def get_next_app_id():
         return f"WF-{datetime.now().strftime('%Y%B%d%H%M%S')[:15]}"
 
 
-from contextlib import asynccontextmanager
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Modern FastAPI lifespan handler ΓÇö replaces deprecated @app.on_event('startup')."""
+    """Modern FastAPI lifespan handler ΓÇö handles optional background tasks."""
     validate_environment()
     await init_db()
-    asyncio.create_task(backup_scheduler_loop())
-    asyncio.create_task(daily_digest_scheduler_loop())
+    
+    if USE_DATABASE:
+        asyncio.create_task(backup_scheduler_loop())
+        asyncio.create_task(daily_digest_scheduler_loop())
+        log("[SYSTEM] Database Schedulers (Backup + Daily Digest) active.")
+    
     asyncio.create_task(_rate_limit_cleanup_loop())
-    log("[SYSTEM] Background schedulers (Backup + Daily Digest + Rate-Limit Cleanup) active.")
+    log("[SYSTEM] Rate-Limit Cleanup active.")
     yield
     # (shutdown logic can go here if needed in future)
 
@@ -621,6 +632,8 @@ async def admin_login(request: Request):
 
 async def get_admin_stats():
     """Calculates key performance metrics for the admin dashboard with optimized logic."""
+    if not USE_DATABASE:
+        return {"total_leads": 0, "total_apps": 0, "momentum": 0, "hotspot": "Cloudflare Edge", "location_json": "{}"}
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
@@ -675,6 +688,17 @@ async def get_admin_stats():
 
 async def show_admin_dashboard(request: Request):
     """The actual dashboard logic, separated for clean access."""
+    if not USE_DATABASE:
+        return HTMLResponse(content="""
+        <html><body style="font-family:sans-serif; text-align:center; padding-top:10%; background:#F8F7F3; color:#1A1714;">
+        <h1 style="color:#D4A853;">Stateless Mode Active</h1>
+        <p>This Cloudflare Worker is running without a database to ensure maximum stability at the edge.</p>
+        <p>Leads and applications are being delivered directly to your <b>Email Inbox</b> via Resend & Brevo.</p>
+        <hr style="width:200px; border:0; border-top:1px solid #D4A853; margin:20px auto;">
+        <a href="/admin-logout" style="color:#D4A853; text-decoration:none; font-weight:bold;">Sign Out</a>
+        </body></html>
+        """)
+
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
@@ -1196,6 +1220,8 @@ async def admin_delete(payload: DeleteRequest, request: Request):
 
 async def generate_export_csv_string() -> str:
     """Generates a CSV string containing all leads and applications."""
+    if not USE_DATABASE:
+        raise HTTPException(status_code=400, detail="Data exports are not available in Stateless (Worker) mode.")
     try:
         async with aiosqlite.connect(DATABASE_PATH) as conn:
             async with conn.cursor() as curr:
