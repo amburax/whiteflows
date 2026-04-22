@@ -26,15 +26,22 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import asyncio
 
-import uvicorn
+try:
+    import uvicorn
+except ImportError:
+    uvicorn = None
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from dotenv import load_dotenv
+try:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    from dotenv import load_dotenv
+except ImportError:
+    ProxyHeadersMiddleware = None
+    load_dotenv = None
 import httpx
 
 # Optional import for local development only
@@ -43,8 +50,9 @@ try:
 except ImportError:
     aiosqlite = None
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (locally only)
+if load_dotenv:
+    load_dotenv()
 
 # Configuration
 ADMIN_EMAIL_MAIN  = os.environ.get('GMAIL_SENDER',   'advisory@whiteflowsint.com')
