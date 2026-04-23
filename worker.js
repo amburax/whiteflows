@@ -602,9 +602,22 @@ export default {
       return handleSubmitApplication(request, env, origin);
     }
 
+    // ── Root / Status Check ────────────────────────────────────────────────
+    if (url.pathname === "/" && method === "GET") {
+      return corsResponse(
+        JSON.stringify({ 
+          status: "online", 
+          platform: "WhiteFlows Elite", 
+          version: "5.0-edge",
+          message: "Elite Lead Intelligence API is Live."
+        }),
+        200, origin
+      );
+    }
+
     // ── 404 ─────────────────────────────────────────────────────────────────
     return corsResponse(
-      JSON.stringify({ error: "Not found" }),
+      JSON.stringify({ error: "Endpoint not found" }),
       404, origin
     );
   },

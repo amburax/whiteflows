@@ -5,12 +5,17 @@
 # Dev:     npx wrangler dev
 # Secrets: npx wrangler secret put BREVO_API_KEY   (one-time setup)
 
-name        = "whiteflows-main-api"
+name        = "whiteflows"
 main        = "worker.js"
 compatibility_date = "2024-04-01"
 
 # ── Account ────────────────────────────────────────────────────────────────
-account_id = "eeeb9d0009b8dfb4a0deacdd7db5c5fa"
+# account_id = "eeeb9d0009b8dfb4a0deacdd7db5c5fa"
+
+# ── Vars ───────────────────────────────────────────────────────────────────
+[vars]
+GMAIL_SENDER   = "whiteflowsint@gmail.com"
+GMAIL_RECEIVER = "whiteflowsint@gmail.com"
 
 # ── Routes ────────────────────────────────────────────────────────────────
 # Uncomment and update once your custom domain is linked in CF Pages/Workers:
@@ -36,8 +41,7 @@ account_id = "eeeb9d0009b8dfb4a0deacdd7db5c5fa"
 # These are NON-SECRET vars set here. Secrets (API keys) must be set via:
 #   npx wrangler secret put VARIABLE_NAME
 # They are NEVER stored in this file.
-[vars]
-# No public vars needed. All sensitive config is set as Wrangler Secrets.
+# Handled in the top-level [vars] block.
 
 # ── Rate Limiting (Cloudflare Free Plan: Smart Placement) ─────────────────
 [placement]
