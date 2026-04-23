@@ -5,7 +5,7 @@
 # Dev:     npx wrangler dev
 # Secrets: npx wrangler secret put BREVO_API_KEY   (one-time setup)
 
-name        = "whiteflows-main-api"
+name = "whiteflows"
 main        = "worker.js"
 compatibility_date = "2024-04-01"
 
