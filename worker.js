@@ -551,43 +551,58 @@ async function handleSubmitApplication(request, env, origin) {
   };
 
   const adminSubject = `New Application [${portfolio}] — ${name} · ${appId}`;
+  
+  // ── Prepare Attachments ───────────────────────────────────────────────────
+  const attachments = [];
+  const attachmentList = [];
+  
+  // 1. Auto-generated PDF
+  if (clean.pdf_base64 && clean.pdf_base64.includes("base64,")) {
+    const pdfName = `Confirmation-${appId}.pdf`;
+    attachments.push({
+      name: pdfName,
+      content: clean.pdf_base64.split("base64,")[1],
+    });
+    attachmentList.push(`<li>✅ <strong>System PDF:</strong> ${pdfName}</li>`);
+  }
+
+  // 2. Uploaded Documents (Object iteration)
+  if (clean.documents && typeof clean.documents === "object") {
+    Object.entries(clean.documents).forEach(([key, doc]) => {
+      if (doc && doc.data && doc.data.includes("base64,")) {
+        const ext = doc.name ? doc.name.split(".").pop() : "png";
+        const fileName = doc.name || `${key}.${ext}`;
+        attachments.push({
+          name: fileName,
+          content: doc.data.split("base64,")[1],
+        });
+        attachmentList.push(`<li>📎 <strong>User Doc:</strong> ${fileName}</li>`);
+      }
+    });
+  }
+
   const adminHtml = buildEmailHtml({
-    title: `New WhiteFlows Application — ${portfolio} Portfolio`,
+    title: `New WhiteFlows Application — ${portfolio}`,
     rows: adminRows,
     bodyNote: `
-      <p style="margin:0;"><strong>Documents:</strong> The applicant has been instructed to send
-      all KYC documents (Aadhar, PAN, Cancelled Cheque, Signature, Selfie) via email directly.</p>
+      <div style="background:#f0f7ff; padding:15px; border-left:4px solid #007bff; border-radius:4px;">
+        <h4 style="margin-top:0; color:#0056b3;">📁 Attached Documents (${attachments.length})</h4>
+        <ul style="margin:0; padding-left:20px; font-size:13px;">
+          ${attachmentList.length > 0 ? attachmentList.join("") : "<li>No documents attached</li>"}
+        </ul>
+        <p style="margin-top:10px; font-size:12px; color:#666;">
+          <em>Note: All files are scanned and attached to this email directly.</em>
+        </p>
+      </div>
     `,
   });
 
   const adminTarget = env.GMAIL_RECEIVER || env.GMAIL_SENDER;
 
-  // ── Prepare Attachments ───────────────────────────────────────────────────
-  const attachments = [];
-  
-  // 1. Auto-generated PDF
-  if (clean.pdf_base64 && clean.pdf_base64.includes("base64,")) {
-    attachments.push({
-      name: `Confirmation-${appId}.pdf`,
-      content: clean.pdf_base64.split("base64,")[1],
-    });
-  }
-
-  // 2. Uploaded Documents
-  if (Array.isArray(clean.documents)) {
-    clean.documents.forEach((doc, idx) => {
-      if (doc.data && doc.data.includes("base64,")) {
-        const ext = doc.name.split(".").pop() || "png";
-        attachments.push({
-          name: doc.name || `Document-${idx+1}.${ext}`,
-          content: doc.data.split("base64,")[1],
-        });
-      }
-    });
-  }
-
   await Promise.allSettled([
+    // Admin gets the full package
     dispatchEmail(env, adminTarget, adminSubject, adminHtml, attachments),
+    // Client gets a clean confirmation (no attachments to save bandwidth/trust)
     dispatchEmail(
       env,
       email,
@@ -600,7 +615,7 @@ async function handleSubmitApplication(request, env, origin) {
     JSON.stringify({
       success: true,
       app_id: appId,
-      message: "Application & Documents submitted successfully. Our team will review them within 24 hours.",
+      message: "Application & Documents received. Our desk will review them within 24 hours.",
     }),
     200, origin
   );
