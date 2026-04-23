@@ -278,7 +278,7 @@ function buildEmailHtml({ title, rows, bodyNote = "", isClient = false }) {
         © ${new Date().getFullYear()} WhiteFlows International · Investment Advisory
       </p>
       <p style="margin:6px 0 0;font-size:10px;color:#C0B8B0;">
-        Gujarat, India · whiteflowsint@gmail.com · +91 88662 82752
+        Gujarat, India · whiteflowsint@gmail.com · +91 94092 72672
       </p>
     </div>
   </div>
@@ -296,6 +296,7 @@ function buildClientConfirmation({ name, refId, formType }) {
     project: "Project Funding Proposal",
     scale: "Scale-Up Proposal",
     ocean: "The Ocean Ecosystem Enquiry",
+    ocean_investor: "The Ocean Ecosystem Enquiry",
     institutional: "Institutional / Ultra-HNI Consultation",
     application: "Portfolio Application",
   }[formType] || "Enquiry";
@@ -336,7 +337,7 @@ function buildClientConfirmation({ name, refId, formType }) {
     </p>
 
     <div style="text-align:center;margin-bottom:32px;">
-      <a href="https://wa.me/918866282752?text=Greetings%20WhiteFlows%2C%20my%20reference%20is%20${refId}"
+      <a href="https://wa.me/919409272672?text=Greetings%20WhiteFlows%2C%20my%20reference%20is%20${refId}"
          style="display:inline-block;padding:14px 36px;background:${GOLD};color:${INK};
                 text-decoration:none;font-weight:700;font-size:12px;letter-spacing:2px;
                 text-transform:uppercase;border-radius:3px;">

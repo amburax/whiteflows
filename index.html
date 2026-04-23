@@ -75,7 +75,7 @@
       "addressRegion": "Gujarat",
       "addressCountry": "IN"
     },
-    "telephone": "+91-88662-82752",
+    "telephone": "+91-94092-72672",
     "areaServed": "IN",
     "serviceType": ["Investment Advisory", "Portfolio Management", "Project Funding"],
     "foundingDate": "2012"
@@ -2166,7 +2166,214 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   width:1px; height:80px; background:var(--smoke); flex-shrink:0;
 }
 
+
+/* ══ OCEAN ECOSYSTEM SECTION ══ */
+.ocean-section {
+  padding: 120px 80px;
+  background: linear-gradient(135deg, #0a0a0a 0%, #0d1b2a 100%);
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+.ocean-section::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+  opacity: 0.1;
+}
+.ocean-header {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 64px;
+}
+.ocean-header h2 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(32px, 4vw, 56px);
+  color: var(--gold);
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+}
+.ocean-header p {
+  font-size: 18px;
+  color: rgba(248, 247, 243, 0.7);
+  line-height: 1.8;
+}
+
+/* ══ OCEAN FORM ══ */
+.ocean-form-card {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 168, 83, 0.15);
+  backdrop-filter: blur(20px);
+  padding: 64px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  position: relative;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+}
+.ocean-form-card::after {
+  content: 'Whale • Penguin';
+  position: absolute;
+  top: 20px; right: 30px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: rgba(212, 168, 83, 0.2);
+  text-transform: uppercase;
+}
+
+.ocean-form-left h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  color: var(--white);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ocean-form-left h3::after {
+  content: ''; flex: 1; height: 1px; background: rgba(212, 168, 83, 0.2);
+}
+
+.ocean-input-group { margin-bottom: 24px; }
+.ocean-label {
+  display: block;
+  font-family: 'Raleway', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.ocean-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 20px;
+  color: var(--white);
+  font-family: 'Raleway', sans-serif;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+.ocean-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ══ INVESTMENT SELECTION ══ */
+.ocean-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.ocean-select-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+.ocean-select-btn:hover {
+  border-color: rgba(212, 168, 83, 0.4);
+  color: var(--white);
+}
+.ocean-select-btn.active {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+/* ══ RANGE SLIDER ══ */
+.ocean-range-wrap { margin-top: 16px; }
+.ocean-range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.ocean-range-val {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.ocean-range {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+.ocean-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  background: var(--gold);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(212, 168, 83, 0.5);
+}
+
+.ocean-submit-btn {
+  width: 100%;
+  background: var(--gold);
+  color: var(--ink);
+  padding: 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.ocean-submit-btn:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.ocean-submit-btn:active { transform: translateY(0); }
+
+.ocean-submit-btn.loading {
+  color: transparent;
+  pointer-events: none;
+}
+.ocean-submit-btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 24px; height: 24px;
+  top: 50%; left: 50%;
+  margin: -12px 0 0 -12px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: ocean-spin 0.8s linear infinite;
+}
+@keyframes ocean-spin { to { transform: rotate(360deg); } }
+
+@media(max-width:900px) {
+  .ocean-form-card { grid-template-columns: 1fr; padding: 40px; }
+  .ocean-section { padding: 80px 20px; }
+}
+
 /* ══ FOOTER ══ */
+
 footer {
   background:var(--footer-bg);
   border-top:1px solid rgba(255,255,255,0.04);
@@ -4246,7 +4453,62 @@ nav.scrolled .nav-links a:hover {
   </div>
 </section>
 
+
+<!-- ══ WHITEFLOWS OCEAN ECOSYSTEM ══ -->
+<section class="ocean-section" id="ocean">
+  <div class="ocean-header" data-aos="fade-up">
+    <div class="section-tag" style="margin-bottom:12px;">The Future of Investing</div>
+    <h2>WhiteFlows Ocean Ecosystem</h2>
+    <p>From the solitary Whale (HNI) to the collective Penguin (Retail), we are bridging the gap. Register today to join the elite migration of capital.</p>
+  </div>
+
+  <div class="ocean-form-card" data-aos="zoom-in" data-aos-delay="100">
+    <div class="ocean-form-left">
+      <h3>Registration of Investors</h3>
+      <form id="oceanInvestorForm">
+        <div class="ocean-input-group">
+          <label class="ocean-label">Full Name</label>
+          <input type="text" class="ocean-input" id="oceanName" placeholder="Enter your official name" required>
+        </div>
+        <div class="ocean-input-group">
+          <label class="ocean-label">Location</label>
+          <input type="text" class="ocean-input" id="oceanLocation" placeholder="City, State" required>
+        </div>
+        <div class="ocean-input-group">
+          <label class="ocean-label">Mobile Number</label>
+          <input type="tel" class="ocean-input" id="oceanMobile" placeholder="10-digit mobile number" required maxlength="10">
+        </div>
+        <button type="submit" class="ocean-submit-btn" id="oceanSubmitBtn">Register Now</button>
+      </form>
+    </div>
+
+    <div class="ocean-form-right">
+      <div class="ocean-input-group">
+        <label class="ocean-label">Investment Interest</label>
+        <div class="ocean-select-grid" id="oceanInterestGrid">
+          <button type="button" class="ocean-select-btn active" data-val="Equities">Equities</button>
+          <button type="button" class="ocean-select-btn" data-val="F&O Advisory">F&O Advisory</button>
+          <button type="button" class="ocean-select-btn" data-val="Managed Portfolio">Managed Portfolio</button>
+          <button type="button" class="ocean-select-btn" data-val="Project Funding">Project Funding</button>
+        </div>
+      </div>
+
+      <div class="ocean-range-wrap">
+        <div class="ocean-range-header">
+          <label class="ocean-label">Min. Investment Range</label>
+          <span class="ocean-range-val" id="oceanRangeLabel">₹ 50 Lakhs</span>
+        </div>
+        <input type="range" class="ocean-range" id="oceanRangeSlider" min="0" max="5" step="1" value="2">
+        <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:14px;line-height:1.6;">
+          Drag to select your investment bandwidth. This helps our desk align the right opportunities for your profile.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="services" id="services">
+
   <div class="services-header" data-aos="fade-up">
     <div class="section-tag center">Our Expertise</div>
     <h2 class="services-main-title">Comprehensive Financial Services</h2>
@@ -5168,7 +5430,7 @@ nav.scrolled .nav-links a:hover {
     <div class="fcol">
       <h4>Contact</h4>
       <a href="mailto:whiteflowsint@gmail.com">whiteflowsint@gmail.com</a>
-      <a href="tel:+918866282752">+91 88662 82752</a>
+      <a href="tel:+919409272672">+91 94092 72672</a>
     </div>
   </div>
   <div class="footer-bottom">
@@ -5608,7 +5870,7 @@ function doSendWhatsApp() {
   }
 
   window._wfSubmitting = true;
-  window.open('https://wa.me/918866282752?text=' + _pendingWA, '_blank');
+  window.open('https://wa.me/919409272672?text=' + _pendingWA, '_blank');
   
   // Minimal delay before closing to show the "Opening" state
   setTimeout(() => {
@@ -7917,13 +8179,104 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     return;
   }
 
+  
+  /* 
+     ══ OCEAN ECOSYSTEM FORM LOGIC ══
+  */
+  document.addEventListener('DOMContentLoaded', function() {
+    const oceanForm = document.getElementById('oceanInvestorForm');
+    const rangeSlider = document.getElementById('oceanRangeSlider');
+    const rangeLabel = document.getElementById('oceanRangeLabel');
+    const interestGrid = document.getElementById('oceanInterestGrid');
+    const submitBtn = document.getElementById('oceanSubmitBtn');
+
+    // Range Logic
+    const ranges = ['₹ 5-10 L', '₹ 10-25 L', '₹ 25-50 L', '₹ 50 L - 1 Cr', '₹ 1 Cr - 5 Cr', '₹ 5 Cr+'];
+    if (rangeSlider && rangeLabel) {
+      rangeSlider.addEventListener('input', (e) => {
+        rangeLabel.textContent = ranges[e.target.value];
+      });
+    }
+
+    // Interest Selection
+    let selectedInterest = 'Equities';
+    if (interestGrid) {
+      interestGrid.querySelectorAll('.ocean-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          interestGrid.querySelectorAll('.ocean-select-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedInterest = btn.dataset.val;
+        });
+      });
+    }
+
+    // Submission
+    if (oceanForm) {
+      oceanForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('oceanName').value.trim();
+        const location = document.getElementById('oceanLocation').value.trim();
+        const mobile = document.getElementById('oceanMobile').value.trim();
+        const range = ranges[rangeSlider.value];
+
+        if (!name || !location || !isValidPhone(mobile)) {
+          showToast(isValidPhone(mobile) ? 'Please fill all fields.' : 'Enter a valid 10-digit mobile.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+
+        const payload = {
+          type: 'ocean_investor',
+          form_name: 'WhiteFlows Ocean Registration',
+          name: name,
+          mobile: mobile,
+          email: 'not-collected@ocean.wf', // Mandatory for backend, but we'll flag it
+          location: location,
+          interest: selectedInterest,
+          investment_range: range
+        };
+
+        try {
+          const resp = await fetch('https://whiteflows.amburax.workers.dev/submit-lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await resp.json();
+          
+          if (data.success) {
+            showToast('Ocean Registration Successful! Ref: ' + data.ref_id);
+            oceanForm.reset();
+            rangeSlider.value = 2;
+            rangeLabel.textContent = ranges[2];
+            interestGrid.querySelectorAll('.ocean-select-btn').forEach(b => b.classList.remove('active'));
+            interestGrid.querySelector('[data-val="Equities"]').classList.add('active');
+            selectedInterest = 'Equities';
+          } else {
+            throw new Error(data.message || 'Submission failed');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Connectivity issue. Please try again or WhatsApp us.');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+        }
+      });
+    }
+  });
+
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeRegModal(); });
+
   </script>
   <datalist id="email-domains">
     <!-- Dynamically populated by Smart Email Suggester -->
   </datalist>
 <!-- ══ FLOAT WHATSAPP ══ -->
-<a href="https://wa.me/918866282752?text=Greetings%20WhiteFlows%2C%20I%20am%20interested%20in%20a%20Strategic%20Consultation%20for%20my%20portfolio." 
+<a href="https://wa.me/919409272672?text=Greetings%20WhiteFlows%2C%20I%20am%20interested%20in%20a%20Strategic%20Consultation%20for%20my%20portfolio." 
    id="float-wa" class="premium-btn" target="_blank" aria-label="WhatsApp Support">
   <div class="wa-icon">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.539 2.016 2.041-.534c.957.534 1.996.819 3.245.82h.002c3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.585-5.773-5.769-5.773zm3.431 8.046c-.148.411-.856.757-1.182.801-.274.037-.624.062-1.02-.067-.253-.082-1.171-.453-2.115-1.293-.728-.646-1.191-1.442-1.334-1.688-.143-.246-.015-.379.108-.501.111-.11.246-.288.37-.432.124-.144.164-.247.246-.411.082-.164.041-.309-.021-.432-.062-.123-.556-1.341-.762-1.838-.201-.486-.407-.403-.556-.411-.144-.008-.309-.011-.473-.011s-.432.062-.656.311c-.225.247-.861.844-.861 2.059 0 1.214.885 2.387 1.008 2.553.123.165 1.741 2.659 4.218 3.73.589.255 1.049.408 1.408.522.593.188 1.132.161 1.558.097.476-.071 1.465-.598 1.671-1.176.206-.578.206-1.071.144-1.176-.062-.105-.226-.168-.474-.291z"/></svg>
