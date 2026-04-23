@@ -275,7 +275,7 @@ function buildEmailHtml({ title, rows, bodyNote = "", isClient = false }) {
     <div style="background:#F2F0EA;padding:20px 28px;text-align:center;
                 border-top:1px solid #E5E2D9;">
       <p style="margin:0;font-size:11px;color:#A8A49C;letter-spacing:.5px;">
-        © ${new Date().getFullYear()} WhiteFlows International · SEBI Registered Investment Advisory
+        © ${new Date().getFullYear()} WhiteFlows International · Investment Advisory
       </p>
       <p style="margin:6px 0 0;font-size:10px;color:#C0B8B0;">
         Gujarat, India · whiteflowsint@gmail.com · +91 88662 82752
@@ -349,7 +349,7 @@ function buildClientConfirmation({ name, refId, formType }) {
 
   <div style="background:#F2F0EA;padding:18px 28px;text-align:center;border-top:1px solid #E5E2D9;">
     <p style="margin:0;font-size:11px;color:#A8A49C;">
-      © ${new Date().getFullYear()} WhiteFlows International · SEBI Registered · All Rights Reserved
+      © ${new Date().getFullYear()} WhiteFlows International · All Rights Reserved
     </p>
   </div>
 </div>
