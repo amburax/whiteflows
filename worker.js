@@ -499,11 +499,7 @@ async function handleSubmitApplication(request, env, origin) {
   }
 
   // ── Strip ALL document & PDF data ────────────────────────────────────────
-  const {
-    pdf_base64: _pdf,       // stripped — PDF generation removed
-    documents: _docs,       // stripped — attachments removed
-    ...clean
-  } = data;
+  const clean = data;
 
   // ── Field extraction ──────────────────────────────────────────────────────
   const name = sanitize(clean.applicant_name || "");
