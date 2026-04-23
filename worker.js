@@ -115,16 +115,16 @@ async function checkRateLimit(env, ip) {
 }
 
 // ─── Email Dispatcher: Brevo REST → Resend REST ──────────────────────────────
-async function dispatchEmail(env, to, subject, html) {
+async function dispatchEmail(env, to, subject, html, attachments = []) {
   // 1. Try Brevo
   if (env.BREVO_API_KEY) {
-    const ok = await sendViaBrevo(env, to, subject, html);
+    const ok = await sendViaBrevo(env, to, subject, html, attachments);
     if (ok) return true;
   }
 
   // 2. Try Resend
   if (env.RESEND_API_KEY) {
-    const ok = await sendViaResend(env, to, subject, html);
+    const ok = await sendViaResend(env, to, subject, html, attachments);
     if (ok) return true;
   }
 
@@ -132,7 +132,7 @@ async function dispatchEmail(env, to, subject, html) {
   return false;
 }
 
-async function sendViaBrevo(env, to, subject, html) {
+async function sendViaBrevo(env, to, subject, html, attachments = []) {
   try {
     const payload = {
       sender: {
@@ -142,8 +142,15 @@ async function sendViaBrevo(env, to, subject, html) {
       to: [{ email: to }],
       subject,
       htmlContent: html,
-      // No attachment array — stripped per task spec
     };
+
+    if (attachments.length > 0) {
+      // Brevo uses "attachment" (no 's')
+      payload.attachment = attachments.map((a) => ({
+        content: a.content,
+        name: a.name,
+      }));
+    }
 
     const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -167,15 +174,22 @@ async function sendViaBrevo(env, to, subject, html) {
   }
 }
 
-async function sendViaResend(env, to, subject, html) {
+async function sendViaResend(env, to, subject, html, attachments = []) {
   try {
     const payload = {
       from: `WhiteFlows <${env.GMAIL_SENDER}>`,
       to: [to],
       subject,
       html,
-      // No attachments
     };
+
+    if (attachments.length > 0) {
+      // Resend uses "attachments" (with 's')
+      payload.attachments = attachments.map((a) => ({
+        filename: a.name,
+        content: a.content,
+      }));
+    }
 
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -551,8 +565,33 @@ async function handleSubmitApplication(request, env, origin) {
   });
 
   const adminTarget = env.GMAIL_RECEIVER || env.GMAIL_SENDER;
+
+  // ── Prepare Attachments ───────────────────────────────────────────────────
+  const attachments = [];
+  
+  // 1. Auto-generated PDF
+  if (clean.pdf_base64 && clean.pdf_base64.includes("base64,")) {
+    attachments.push({
+      name: `Confirmation-${appId}.pdf`,
+      content: clean.pdf_base64.split("base64,")[1],
+    });
+  }
+
+  // 2. Uploaded Documents
+  if (Array.isArray(clean.documents)) {
+    clean.documents.forEach((doc, idx) => {
+      if (doc.data && doc.data.includes("base64,")) {
+        const ext = doc.name.split(".").pop() || "png";
+        attachments.push({
+          name: doc.name || `Document-${idx+1}.${ext}`,
+          content: doc.data.split("base64,")[1],
+        });
+      }
+    });
+  }
+
   await Promise.allSettled([
-    dispatchEmail(env, adminTarget, adminSubject, adminHtml),
+    dispatchEmail(env, adminTarget, adminSubject, adminHtml, attachments),
     dispatchEmail(
       env,
       email,
@@ -565,8 +604,7 @@ async function handleSubmitApplication(request, env, origin) {
     JSON.stringify({
       success: true,
       app_id: appId,
-      message:
-        "Application submitted successfully. Check your email for confirmation. Please send your documents via email.",
+      message: "Application & Documents submitted successfully. Our team will review them within 24 hours.",
     }),
     200, origin
   );
