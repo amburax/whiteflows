@@ -37,7 +37,10 @@ const DOCUMENT_FOOTER_HTML = `
 
 // ─── CORS Helpers ────────────────────────────────────────────────────────────
 function getCorsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  let allowed = ALLOWED_ORIGINS[0];
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".pages.dev"))) {
+    allowed = origin;
+  }
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -155,8 +158,8 @@ async function sendViaBrevo(env, to, subject, html) {
       console.log("[EMAIL] Brevo OK →", to);
       return true;
     }
-    const err = await resp.text();
-    console.error("[EMAIL] Brevo fail:", resp.status, err);
+    const errText = await resp.text();
+    console.error(`[EMAIL] Brevo fail: ${resp.status} ${errText}`);
     return false;
   } catch (e) {
     console.error("[EMAIL] Brevo exception:", e.message);
@@ -167,7 +170,7 @@ async function sendViaBrevo(env, to, subject, html) {
 async function sendViaResend(env, to, subject, html) {
   try {
     const payload = {
-      from: `WhiteFlows <${env.GMAIL_SENDER}>`,
+      from: "WhiteFlows <onboarding@resend.dev>",
       to: [to],
       subject,
       html,
@@ -188,7 +191,7 @@ async function sendViaResend(env, to, subject, html) {
       return true;
     }
     const err = await resp.text();
-    console.error("[EMAIL] Resend fail:", resp.status, err);
+    console.error(`[EMAIL] Resend fail: ${resp.status} ${err}`);
     return false;
   } catch (e) {
     console.error("[EMAIL] Resend exception:", e.message);

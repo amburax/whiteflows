@@ -5564,7 +5564,8 @@ function showToast(msg) {
   toast.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#1A1714;color:#D4A853;border:1px solid #D4A853;border-radius:6px;padding:14px 28px;font-family:Raleway,sans-serif;font-size:14px;font-weight:600;letter-spacing:0.04em;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-width:90vw;text-align:center;opacity:0;transition:opacity 0.3s ease';
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '1'; }, 10);
-  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 350); }, 4000);
+  const API_BASE_URL = "https://whiteflows.amburax.workers.dev";
+  setTimeout(() => { toast.remove(); }, 4000);
 }
 
 /* Reset form back to blank state */
@@ -5631,7 +5632,7 @@ function doSendEmail(customBtn) {
     btn.classList.add('loading');
   }
 
-  var leadUrl = 'https://whiteflows-main-api.amburax.workers.dev/submit-lead';
+  var leadUrl = 'https://whiteflows.amburax.workers.dev/submit-lead';
   
   fetch(leadUrl, {
     method: 'POST',
@@ -7844,7 +7845,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     }
 
     /* Generate PDF in browser (jsPDF) then submit to server */
-    var serverUrl = 'https://whiteflows-main-api.amburax.workers.dev/submit';
+    var serverUrl = 'https://whiteflows.amburax.workers.dev/submit';
 
     var pdf_base64 = '';
     try {
