@@ -1,16 +1,56 @@
-name = "whiteflows-elite"
-main = "worker.py"
-compatibility_date = "2024-12-01"
-compatibility_flags = ["python_workers"]
+# wrangler.toml
+# WhiteFlows International — Cloudflare Worker Configuration
+#
+# Deploy:  npx wrangler deploy
+# Dev:     npx wrangler dev
+# Secrets: npx wrangler secret put BREVO_API_KEY   (one-time setup)
 
+name        = "whiteflows-elite-api"
+main        = "worker.js"
+compatibility_date = "2024-04-01"
+
+# ── Account ────────────────────────────────────────────────────────────────
+# account_id = "your_cloudflare_account_id"   # Set via CF dashboard or CLI
+
+# ── Routes ────────────────────────────────────────────────────────────────
+# Uncomment and update once your custom domain is linked in CF Pages/Workers:
+# routes = [
+#   { pattern = "whiteflowsint.com/submit*",      zone_name = "whiteflowsint.com" },
+#   { pattern = "whiteflowsint.com/health",       zone_name = "whiteflowsint.com" },
+#   { pattern = "www.whiteflowsint.com/submit*",  zone_name = "whiteflowsint.com" },
+# ]
+
+# ── KV Namespace for Rate Limiting (optional but recommended) ──────────────
+# Steps to create:
+#   1. npx wrangler kv namespace create "RATE_LIMIT_KV"
+#   2. Copy the id from the output into the binding below
+#   3. Also create a preview namespace:
+#      npx wrangler kv namespace create "RATE_LIMIT_KV" --preview
+#
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id      = "YOUR_KV_NAMESPACE_ID"
+# preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+
+# ── Environment Variables ─────────────────────────────────────────────────
+# These are NON-SECRET vars set here. Secrets (API keys) must be set via:
+#   npx wrangler secret put VARIABLE_NAME
+# They are NEVER stored in this file.
 [vars]
-GMAIL_SENDER = "your-email@gmail.com"
-GMAIL_RECEIVER = "recipient-email@gmail.com"
-BREVO_API_KEY = "your-brevo-api-key"
-RESEND_API_KEY = "your-resend-api-key"
-ADMIN_PASSWORD = "whiteflows2026"
+# No public vars needed. All sensitive config is set as Wrangler Secrets.
 
-# Assets (Frontend)
-[assets]
-directory = "./"
-binding = "ASSETS"
+# ── Rate Limiting (Cloudflare Free Plan: Smart Placement) ─────────────────
+[placement]
+mode = "smart"
+
+# ── Build ────────────────────────────────────────────────────────────────
+# No build step required — pure ES Module Worker
+
+# ─────────────────────────────────────────────────────────────────────────
+# REQUIRED SECRETS (set via CLI — never commit these values)
+# ─────────────────────────────────────────────────────────────────────────
+# npx wrangler secret put BREVO_API_KEY
+# npx wrangler secret put RESEND_API_KEY
+# npx wrangler secret put GMAIL_SENDER
+# npx wrangler secret put GMAIL_RECEIVER
+# npx wrangler secret put ADMIN_PASSWORD

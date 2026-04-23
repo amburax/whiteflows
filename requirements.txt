@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-python-multipart
-aiosqlite
-python-jose[cryptography]
-python-dotenv
-httpx
-pydantic
-PyJWT
