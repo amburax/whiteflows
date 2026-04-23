@@ -170,7 +170,7 @@ async function sendViaBrevo(env, to, subject, html) {
 async function sendViaResend(env, to, subject, html) {
   try {
     const payload = {
-      from: "WhiteFlows <onboarding@resend.dev>",
+      from: `WhiteFlows <${env.GMAIL_SENDER}>`,
       to: [to],
       subject,
       html,

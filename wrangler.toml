@@ -14,7 +14,7 @@ compatibility_date = "2024-04-01"
 
 # ── Vars ───────────────────────────────────────────────────────────────────
 [vars]
-GMAIL_SENDER   = "whiteflowsint@gmail.com"
+GMAIL_SENDER   = "admin@whiteflowsint.com"
 GMAIL_RECEIVER = "whiteflowsint@gmail.com"
 
 # ── Routes ────────────────────────────────────────────────────────────────
