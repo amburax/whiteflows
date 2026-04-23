@@ -5,12 +5,12 @@
 # Dev:     npx wrangler dev
 # Secrets: npx wrangler secret put BREVO_API_KEY   (one-time setup)
 
-name        = "whiteflows-elite-api"
+name        = "whiteflows-main-api"
 main        = "worker.js"
 compatibility_date = "2024-04-01"
 
 # ── Account ────────────────────────────────────────────────────────────────
-# account_id = "your_cloudflare_account_id"   # Set via CF dashboard or CLI
+account_id = "eeeb9d0009b8dfb4a0deacdd7db5c5fa"
 
 # ── Routes ────────────────────────────────────────────────────────────────
 # Uncomment and update once your custom domain is linked in CF Pages/Workers:

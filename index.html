@@ -5631,7 +5631,7 @@ function doSendEmail(customBtn) {
     btn.classList.add('loading');
   }
 
-  var leadUrl = (window.location.protocol === 'file:') ? 'http://localhost:8001/submit-lead' : '/submit-lead';
+  var leadUrl = 'https://whiteflows-main-api.amburax.workers.dev/submit-lead';
   
   fetch(leadUrl, {
     method: 'POST',
@@ -7844,7 +7844,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfol
     }
 
     /* Generate PDF in browser (jsPDF) then submit to server */
-    var serverUrl = (window.location.protocol === 'file:') ? 'http://localhost:8001/submit' : '/submit';
+    var serverUrl = 'https://whiteflows-main-api.amburax.workers.dev/submit';
 
     var pdf_base64 = '';
     try {
