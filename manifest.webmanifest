@@ -1,0 +1,22 @@
+{
+  "name": "WhiteFlows International",
+  "short_name": "WhiteFlows",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8F7F3",
+  "theme_color": "#F8F7F3",
+  "description": "Premium investment advisory, project funding, and portfolio consultation across Gujarat and beyond.",
+  "icons": [
+    {
+      "src": "/static/images/asset_0.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/asset_1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -2,4 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /static/docs/
+Host: whiteflowsint.com
 Sitemap: https://whiteflowsint.com/sitemap.xml

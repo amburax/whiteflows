@@ -17,8 +17,6 @@
 
 // ─── Allowed Origins ────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  "https://whiteflows.com",
-  "https://www.whiteflows.com",
   "https://whiteflowsint.com",
   "https://www.whiteflowsint.com",
 ];
@@ -54,6 +52,10 @@ function corsResponse(body, status, origin, extraHeaders = {}) {
     status,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-Content-Type-Options": "nosniff",
+      "Permissions-Policy": "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
       ...getCorsHeaders(origin),
       ...extraHeaders,
     },
