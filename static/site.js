@@ -1,10 +1,10 @@
-/* â•â• EmailJS CONFIG â•â•
+/* ══ EmailJS CONFIG ══
        STEP 1: Sign up free at https://www.emailjs.com
-       STEP 2: Add Gmail service â†’ copy Service ID below
-       STEP 3: Create email template â†’ copy Template ID below
-       STEP 4: Go to Account â†’ copy Public Key below
+       STEP 2: Add Gmail service → copy Service ID below
+       STEP 3: Create email template → copy Template ID below
+       STEP 4: Go to Account → copy Public Key below
        Full setup guide in README below the HTML file.
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    ══════════════════════ */
     document.addEventListener("DOMContentLoaded", function() {
       (function(){
         var EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // <-- paste here
@@ -24,9 +24,9 @@
       })();
     });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════
 // BANNER CAROUSEL ENGINE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════
 (function(){
   const TOTAL      = 5;
   const AUTO_DELAY = 5500;
@@ -66,7 +66,7 @@
 
     const prev = current;
     current    = next;
-    // direction: 1=forward(rightâ†’left), -1=back(leftâ†’right)
+    // direction: 1=forward(right→left), -1=back(left→right)
     const incoming = dir === -1 ? OFFSCREEN_LEFT : OFFSCREEN_RIGHT;
     const outgoing = dir === -1 ? OFFSCREEN_RIGHT : OFFSCREEN_LEFT;
 
@@ -110,7 +110,7 @@
       a.style.borderColor  = isDark ? 'rgba(212,168,83,0.3)' : 'var(--smoke)';
     });
 
-    // Nav light/dark state â€” read from slide data-nav attribute
+    // Nav light/dark state — read from slide data-nav attribute
     updateNavState(slides[current]);
 
     resetProgress();
@@ -199,12 +199,12 @@
     if(e.key==='ArrowRight') window.carouselMove(1);
   });
 
-  // â”€â”€ Nav state updater â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Nav state updater ──────────────────────────────
   window.updateNavState = function(slide){
     const nav = document.getElementById('mainNav');
     if(!nav) return;
     const navMode = slide ? slide.getAttribute('data-nav') : 'light';
-    // If user has scrolled, nav is always in scrolled/light state â€” don't interfere
+    // If user has scrolled, nav is always in scrolled/light state — don't interfere
     if(nav.classList.contains('scrolled')) return;
     if(navMode === 'dark'){
       nav.classList.add('dark-nav');
@@ -222,7 +222,7 @@
 
 
 
-// Nav scroll â€” throttled with rAF
+// Nav scroll — throttled with rAF
 let rafScroll = 0;
 window.addEventListener('scroll',()=>{
   if(rafScroll) return;
@@ -246,7 +246,7 @@ const io = new IntersectionObserver(entries=>{
 }, {threshold:0.1});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-// â”€â”€ Slide CTA â†’ specific consultation form tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Slide CTA → specific consultation form tab ─────────────────
 function scrollToConsult(tab) {
   // Scroll to #register section
   const reg = document.getElementById('register');
@@ -276,7 +276,7 @@ function openConsultModal(tab) {
 }
 
 
-// â”€â”€ Hamburger menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hamburger menu ──────────────────────────────────────────
 function isValidPhone(num) {
   // Must be 10 digits and start with 6-9
   return /^[6-9]\d{9}$/.test(num.replace(/\D/g, ''));
@@ -306,11 +306,11 @@ function isValidPhone(num) {
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════
 // FORM VALIDATION + SEND CHOICE MODAL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════
 
-/* Pending payload â€” stored after validation, used when user picks channel */
+/* Pending payload — stored after validation, used when user picks channel */
 let _pendingWA       = '';
 let _pendingEmail    = '';
 let _pendingSubj     = '';
@@ -348,7 +348,7 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* Normalise phone â€” ensure + prefix */
+/* Normalise phone — ensure + prefix */
 function normalisePhone(raw) {
   let p = raw.trim().replace(/\s+/g, '');
   if (p.startsWith('00')) p = '+' + p.slice(2);
@@ -360,7 +360,7 @@ function normalisePhone(raw) {
 function showError(id, msg) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.textContent = 'âš  ' + msg;
+  el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
@@ -425,7 +425,7 @@ function resetForm(type) {
 /* User chose WhatsApp */
 function doSendWhatsApp() {
   if (!isWAscheduled()) {
-    showToast('Consultation available Monâ€“Sat 9AMâ€“6PM IST.');
+    showToast('Consultation available Mon–Sat 9AM–6PM IST.');
     return;
   }
   if (!_pendingWA) return;
@@ -520,7 +520,7 @@ function closeSecurityModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* â”€â”€ Phone Masking (XXXXX XXXXX) â”€â”€ */
+  /* ── Phone Masking (XXXXX XXXXX) ── */
   document.querySelectorAll('input[type="tel"]').forEach(inp => {
     inp.addEventListener('input', (e) => {
       let v = e.target.value.replace(/\D/g, '').substring(0, 10);
@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* â”€â”€ Smart Email Suggester (Dynamic @ Triggers) â”€â”€ */
+  /* ── Smart Email Suggester (Dynamic @ Triggers) ── */
   const emailDomains = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'hotmail.com'];
   const emailDatalist = document.getElementById('email-domains');
   document.querySelectorAll('input[type="email"]').forEach(inp => {
@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-/* â”€â”€ RETAIL FORM â”€â”€ */
+/* ── RETAIL FORM ── */
 function submitRetail() {
   const fname     = (document.getElementById('r-fname')?.value     || '').trim();
   const lname     = (document.getElementById('r-lname')?.value     || '').trim();
@@ -590,8 +590,8 @@ function submitRetail() {
   const phone = normalisePhone(phoneRaw);
 
   _pendingWA = encodeURIComponent(
-`*New WhiteFlows Lead â€” Consult*
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+`*New WhiteFlows Lead — Consult*
+──────────────────────
 Name: ${fname} ${lname}
 Email: ${email}
 Phone: ${phone}
@@ -599,11 +599,11 @@ Location: ${city}, ${state}, ${country}
 Investment Range: ${invest}
 Time Horizon: ${horizon}
 Objective: ${obj}
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+──────────────────────
 Submitted via WhiteFlows Website`);
 
   _pendingEmail = encodeURIComponent(
-`New WhiteFlows Lead â€” Consult
+`New WhiteFlows Lead — Consult
 
 Name: ${fname} ${lname}
 Email: ${email}
@@ -615,7 +615,7 @@ Objective: ${obj}
 
 Submitted via WhiteFlows Website`);
 
-  _pendingSubj     = encodeURIComponent('CONSULT LEAD â€” ' + fname + ' ' + lname);
+  _pendingSubj     = encodeURIComponent('CONSULT LEAD — ' + fname + ' ' + lname);
   _pendingFormType = 'retail';
   _pendingEmailData = { 
     type: 'retail', 
@@ -634,7 +634,7 @@ Submitted via WhiteFlows Website`);
   doSendEmail(btn);
 }
 
-/* â”€â”€ PROJECT FUNDING FORM â”€â”€ */
+/* ── PROJECT FUNDING FORM ── */
 function submitProject() {
   const fname     = (document.getElementById('p-fname')?.value     || '').trim();
   const lname     = (document.getElementById('p-lname')?.value     || '').trim();
@@ -668,8 +668,8 @@ function submitProject() {
   const phone = normalisePhone(phoneRaw);
 
   _pendingWA = encodeURIComponent(
-`*New WhiteFlows Lead â€” Project Funding*
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+`*New WhiteFlows Lead — Project Funding*
+──────────────────────
 Name: ${fname} ${lname}
 Email: ${email}
 Phone: ${phone}
@@ -679,11 +679,11 @@ Company: ${company}
 Business Location: ${busLoc}
 Investment Range: ${invest}
 Purpose: ${purpose}
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+──────────────────────
 Submitted via WhiteFlows Website`);
 
   _pendingEmail = encodeURIComponent(
-`New WhiteFlows Lead â€” Project Funding
+`New WhiteFlows Lead — Project Funding
 
 Name: ${fname} ${lname}
 Email: ${email}
@@ -697,7 +697,7 @@ Purpose: ${purpose}
 
 Submitted via WhiteFlows Website`);
 
-  _pendingSubj     = encodeURIComponent('PROJECT FUNDING LEAD â€” ' + fname + ' ' + lname);
+  _pendingSubj     = encodeURIComponent('PROJECT FUNDING LEAD — ' + fname + ' ' + lname);
   _pendingFormType = 'project';
   _pendingEmailData = { 
     type: 'project', 
@@ -718,7 +718,7 @@ Submitted via WhiteFlows Website`);
   doSendEmail(btn);
 }
 
-/* â”€â”€ READY TO SCALE FORM â”€â”€ */
+/* ── READY TO SCALE FORM ── */
 function submitScale() {
   const fname     = (document.getElementById('s-fname')?.value     || '').trim();
   const lname     = (document.getElementById('s-lname')?.value     || '').trim();
@@ -747,7 +747,7 @@ function submitScale() {
 
   const phone = normalisePhone(phoneRaw);
 
-  /* â”€â”€ Read proposal document (same pattern as registration form) â”€â”€ */
+  /* ── Read proposal document (same pattern as registration form) ── */
   const proposalInput = document.getElementById('s-proposal');
   const proposalFile  = proposalInput?.files?.[0];
 
@@ -843,7 +843,7 @@ Submitted via WhiteFlows Website`);
 }
 
 
-/* â”€â”€ OCEAN FORM â”€â”€ */
+/* ── OCEAN FORM ── */
 function toggleOceanOther(val) {
   const group = document.getElementById('o-interest-other-group');
   if (group) group.style.display = (val === 'others') ? 'block' : 'none';
@@ -882,19 +882,19 @@ function submitOcean() {
   const phone = normalisePhone(phoneRaw);
 
   _pendingWA = encodeURIComponent(
-`*New WhiteFlows Lead â€” The Ocean Ecosystem*
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+`*New WhiteFlows Lead — The Ocean Ecosystem*
+──────────────────────
 Name: ${fname} ${lname}
 Email: ${email}
 Phone: ${phone}
 Location: ${city}, ${state}, ${country}
 Investment Range: ${invest}
 Interest: ${interest}
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+──────────────────────
 Submitted via WhiteFlows Website`);
 
   _pendingEmail = encodeURIComponent(
-`New WhiteFlows Lead â€” The Ocean Ecosystem
+`New WhiteFlows Lead — The Ocean Ecosystem
 
 Name: ${fname} ${lname}
 Email: ${email}
@@ -905,7 +905,7 @@ Interest: ${interest}
 
 Submitted via WhiteFlows Website`);
 
-  _pendingSubj     = encodeURIComponent('OCEAN ECOSYSTEM LEAD â€” ' + fname + ' ' + lname);
+  _pendingSubj     = encodeURIComponent('OCEAN ECOSYSTEM LEAD — ' + fname + ' ' + lname);
   _pendingFormType = 'ocean';
   _pendingEmailData = { 
     type: 'ocean', 
@@ -923,7 +923,7 @@ Submitted via WhiteFlows Website`);
   doSendEmail(btn);
 }
 
-/* â”€â”€ INSTITUTIONAL FORM â”€â”€ */
+/* ── INSTITUTIONAL FORM ── */
 function submitInstitutional() {
   const entity    = (document.getElementById('i-entity')?.value   || '').trim();
   const email     = (document.getElementById('i-email')?.value    || '').trim();
@@ -946,19 +946,19 @@ function submitInstitutional() {
   if (!aum)        { showError('i-error','Please select your AUM range.');     return; }
 
   _pendingWA = encodeURIComponent(
-`*New WhiteFlows Lead â€” Institutional/Ultra-HNI*
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+`*New WhiteFlows Lead — Institutional/Ultra-HNI*
+──────────────────────
 Entity: ${entity}
 Email: ${email}
 Contact: ${contact}
 Phone: ${phone}
 Entity Type: ${entityType}
 AUM Range: ${aum}
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+──────────────────────
 Submitted via WhiteFlows Website`);
 
   _pendingEmail = encodeURIComponent(
-`New WhiteFlows Lead â€” Institutional/Ultra-HNI
+`New WhiteFlows Lead — Institutional/Ultra-HNI
 
 Entity: ${entity}
 Email: ${email}
@@ -969,7 +969,7 @@ AUM Range: ${aum}
 
 Submitted via WhiteFlows Website`);
 
-  _pendingSubj     = encodeURIComponent('INSTITUTIONAL LEAD â€” ' + entity);
+  _pendingSubj     = encodeURIComponent('INSTITUTIONAL LEAD — ' + entity);
   _pendingFormType = 'institutional';
   _pendingEmailData = { 
     type: 'institutional', 
@@ -987,11 +987,11 @@ Submitted via WhiteFlows Website`);
   doSendEmail(btn);
 }
 
-// â”€â”€ Dynamic copyright year â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Dynamic copyright year ──────────────────────────────────
 const yearEl = document.getElementById('copyrightYear');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-// â”€â”€ Scroll to top button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Scroll to top button ─────────────────────────────────────
 (function(){
   const btn = document.getElementById('scrollTopBtn');
   if (!btn) return;
@@ -1001,9 +1001,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// COUNTER ANIMATION â€” Stats count up when slide 1 is active
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// COUNTER ANIMATION — Stats count up when slide 1 is active
+// ══════════════════════════════════════════════════════════
 (function(){
   let hasAnimated = false;
 
@@ -1048,7 +1048,7 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
   const statsEl = document.getElementById('heroStats');
   if (!statsEl) return;
 
-  // Also hook into carousel â€” re-trigger on return to slide 1
+  // Also hook into carousel — re-trigger on return to slide 1
   const origGoTo = window.carouselGoTo;
   const origMove = window.carouselMove;
 
@@ -1067,7 +1067,7 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
     if (origMove) origMove(dir);
   };
 
-  // Trigger on first page load â€” slide 1 is default
+  // Trigger on first page load — slide 1 is default
   // Wait for page to fully render
   if (document.readyState === 'complete') {
     setTimeout(animateCounters, 600);
@@ -1077,9 +1077,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
 // TESTIMONIALS CAROUSEL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
 (function(){
   const track    = document.getElementById('testiTrack');
   const dotsWrap = document.getElementById('testiNav');
@@ -1114,7 +1114,7 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
     const gap   = 28;
     track.style.transform = `translateX(-${current * (cardW + gap)}px)`;
 
-    // Update dots â€” 3 dots represent start, middle, end
+    // Update dots — 3 dots represent start, middle, end
     const dotIdx = current === 0 ? 0 : current >= maxIndex ? 2 : 1;
     dots.forEach((d, i) => d.classList.toggle('active', i === dotIdx));
   }
@@ -1160,9 +1160,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FIX 5 â€” PAGE ENTRANCE ANIMATION
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// FIX 5 — PAGE ENTRANCE ANIMATION
+// ══════════════════════════════════════════════════════════
 (function(){
   // Trigger entrance elements right after DOM loads
   function triggerEntrance() {
@@ -1177,9 +1177,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
   }
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FIX 6 â€” PHILOSOPHY PILLAR STAGGERED ENTRANCE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// FIX 6 — PHILOSOPHY PILLAR STAGGERED ENTRANCE
+// ══════════════════════════════════════════════════════════
 (function(){
   const pillars = document.querySelectorAll('.pillar-animate');
   if (!pillars.length) return;
@@ -1196,9 +1196,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
   pillars.forEach(p => observer.observe(p));
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FIX 7 â€” COOKIE CONSENT BANNER
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// FIX 7 — COOKIE CONSENT BANNER
+// ══════════════════════════════════════════════════════════
 (function(){
   const bar     = document.getElementById('cookieBar');
   const accept  = document.getElementById('cookieAccept');
@@ -1231,12 +1231,12 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FIX 3 â€” FORM ABANDONMENT PROTECTION (beforeunload)
-// Uses a clean boolean flag â€” cleared when user submits
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// FIX 3 — FORM ABANDONMENT PROTECTION (beforeunload)
+// Uses a clean boolean flag — cleared when user submits
+// ══════════════════════════════════════════════════════════
 (function(){
-  // Global flag â€” set true the moment user clicks send
+  // Global flag — set true the moment user clicks send
   window._wfSubmitting = false;
 
   const WATCHED_IDS = ['r-fname','r-lname','r-email','r-phone',
@@ -1265,21 +1265,21 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// ACTIVE NAV LINK ON SCROLL â€” IntersectionObserver
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// ACTIVE NAV LINK ON SCROLL — IntersectionObserver
+// ══════════════════════════════════════════════════════════
 (function(){
   const navLinks = document.querySelectorAll('.nav-links a[data-section]');
   if (!navLinks.length) return;
 
-  // Map section-id â†’ nav link
+  // Map section-id → nav link
   const linkMap = {};
   navLinks.forEach(link => {
     const sec = link.dataset.section;
     if (sec) linkMap[sec] = link;
   });
 
-  // Also add #contact â†’ footer
+  // Also add #contact → footer
   const footer = document.querySelector('footer');
   if (footer && !footer.id) footer.id = 'contact';
 
@@ -1317,7 +1317,7 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   sections.forEach(sec => observer.observe(sec));
 
-  // Also handle scroll to top â€” clear active
+  // Also handle scroll to top — clear active
   window.addEventListener('scroll', () => {
     if (window.scrollY < 100) setActive(null);
   }, { passive: true });
@@ -1325,9 +1325,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 })();
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// REFERENCE MARKET DATA â€” Illustrative snapshot for presentation
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// REFERENCE MARKET DATA — Illustrative snapshot for presentation
+// ══════════════════════════════════════════════════════════
 (function(){
   // Reference prices used for the on-page illustrative snapshot
   const STOCKS = [
@@ -1342,9 +1342,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
     { id:'sbi',       ticker:'SBI',        label:'SBI',       name:'BSE:SBI',       price:762.40,   isIndex:false },
   ];
   const COMMS = [
-    { id:'gold',   name:'Gold / 10g',  price:62840,  currency:'â‚¹', decimals:0 },
-    { id:'silver', name:'Silver / kg', price:74210,  currency:'â‚¹', decimals:0 },
-    { id:'usd',    name:'USD / INR',   price:83.42,  currency:'â‚¹', decimals:2 },
+    { id:'gold',   name:'Gold / 10g',  price:62840,  currency:'₹', decimals:0 },
+    { id:'silver', name:'Silver / kg', price:74210,  currency:'₹', decimals:0 },
+    { id:'usd',    name:'USD / INR',   price:83.42,  currency:'₹', decimals:2 },
     { id:'crude',  name:'Crude / bbl', price:78.40,  currency:'$', decimals:2 },
   ];
   // Track running prices and open prices
@@ -1437,16 +1437,16 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
   });
 })();
 
-/* â•â• PORTFOLIO MODAL DATA â•â• */
+/* ══ PORTFOLIO MODAL DATA ══ */
 const portfolioData = {
   samyak: {
-    badge: 'Flagship Â· Bestseller',
+    badge: 'Flagship · Bestseller',
     title: 'Samyak',
     tagline: 'Balanced Growth & Long-Term Stability',
-    irr: '18â€“22%',
-    min: 'â‚¹5,00,000',
+    irr: '18–22%',
+    min: '₹5,00,000',
     rebalance: 'Quarterly',
-    horizon: '3â€“5 Years',
+    horizon: '3–5 Years',
     strategy: 'Samyak Portfolios (Right Earnings) : Investing in Harmony with Nature\n\nFor those who walk the path of the Ashtaang Maarg and value ethical living, we present Samyak Portfolios. Rooted in the sacred principles of Ahimsa (non-violence) and Satya (truth), these portfolios are designed for investors who believe that wealth should be earned with a clear conscience.\n\nOur rigorous screening process ensures your capital stays away from industries involving weapons, meat processing, intoxicants, and environmental harm. Instead, we channel your investments into businesses that are socially responsible, ecologically sustainable, and ethically governed. Grow your prosperity while staying true to your spiritual foundations.',
     holdings: ['FMCG Leaders','Banking & NBFC','IT & Technology','Infrastructure','Healthcare','Consumer Durables','Auto & Ancillaries','Capital Goods'],
     riskWidth: '40%',
@@ -1456,13 +1456,13 @@ const portfolioData = {
   },
   halaal: {
     badge: 'Shariah-Certified',
-    title: 'â˜ª Halaal Portfolio',
-    tagline: 'Principled Investing â€” 100% Shariah Compliant',
-    irr: '15â€“20%',
-    min: 'â‚¹3,00,000',
+    title: '☪ Halaal Portfolio',
+    tagline: 'Principled Investing — 100% Shariah Compliant',
+    irr: '15–20%',
+    min: '₹3,00,000',
     rebalance: 'Quarterly',
-    horizon: '3â€“7 Years',
-    strategy: 'Halaal Portfolios : Your Wealth, Purified.\n\nExperience an investment strategy where ethics meet performance. Our Halaal Portfolio undergoes rigorous Shariah screening to ensure every instrument is free from interest-bearing assets, tobacco, alcohol, gambling, and conventional finance.\n\nLeveraging the 37-years legacy of Indiaâ€™s oldest brokerage houses and modern execution of WhiteFlows, we provide a verified, ethical gateway to the markets. Invest with clarity, knowing your growth is built on a foundation of integrity.',
+    horizon: '3–7 Years',
+    strategy: 'Halaal Portfolios : Your Wealth, Purified.\n\nExperience an investment strategy where ethics meet performance. Our Halaal Portfolio undergoes rigorous Shariah screening to ensure every instrument is free from interest-bearing assets, tobacco, alcohol, gambling, and conventional finance.\n\nLeveraging the 37-years legacy of India’s oldest brokerage houses and modern execution of WhiteFlows, we provide a verified, ethical gateway to the markets. Invest with clarity, knowing your growth is built on a foundation of integrity.',
     holdings: ['IT & Software','Halaal-screened FMCG','Healthcare & Pharma','Real Estate (REIT)','Renewables & Clean Energy','Consumer Goods','Export-Oriented Equities'],
     riskWidth: '35%',
     riskColor: 'linear-gradient(90deg, #27ae60, #2ecc71)',
@@ -1470,14 +1470,14 @@ const portfolioData = {
     cta: 'Register Now'
   },
   fno: {
-    badge: 'Advanced Â· HNI Only',
+    badge: 'Advanced · HNI Only',
     title: 'F&O Strategies',
     tagline: 'Algorithmic Derivatives & Options',
-    irr: '25â€“35%',
-    min: 'â‚¹10,00,000',
+    irr: '25–35%',
+    min: '₹10,00,000',
     rebalance: 'Weekly',
-    horizon: '1â€“2 Years',
-    strategy: 'Professional-grade options strategies engineered for consistent premium collection and downside protection. We deploy covered calls, iron condors, and directional futures with strict risk overlays â€” no naked exposure. Every strategy is algo-assisted and manually reviewed by our senior derivatives desk. Designed for investors who understand leverage and want institutional-quality execution.',
+    horizon: '1–2 Years',
+    strategy: 'Professional-grade options strategies engineered for consistent premium collection and downside protection. We deploy covered calls, iron condors, and directional futures with strict risk overlays — no naked exposure. Every strategy is algo-assisted and manually reviewed by our senior derivatives desk. Designed for investors who understand leverage and want institutional-quality execution.',
     holdings: ['Nifty 50 Options','Bank Nifty Options','Stock Futures (Top 50)','Hedged Index Spreads','Volatility Arbitrage','Momentum Derivatives'],
     riskWidth: '72%',
     riskColor: 'linear-gradient(90deg, #f39c12, #e74c3c)',
@@ -1485,48 +1485,48 @@ const portfolioData = {
     cta: 'Register Now'
   },
   thematic: {
-    badge: 'Thematic Â· Forward-Looking',
+    badge: 'Thematic · Forward-Looking',
     title: 'Thematic Portfolio',
-    tagline: "India's Next Decade â€” Concentrated Sector Bets",
-    irr: '20â€“30%',
-    min: 'â‚¹5,00,000',
+    tagline: "India's Next Decade — Concentrated Sector Bets",
+    irr: '20–30%',
+    min: '₹5,00,000',
     rebalance: 'Monthly',
-    horizon: '2â€“5 Years',
-    strategy: "We bet on India's structural transformation. This portfolio takes concentrated, high-conviction positions in themes that will define the next decade â€” Electric Vehicles, Artificial Intelligence, Green Energy, Defence self-reliance, and Digital Infrastructure. Each theme is backed by policy tailwind, demographic shift, and capital cycle. We ride the wave before the crowd arrives.",
+    horizon: '2–5 Years',
+    strategy: "We bet on India's structural transformation. This portfolio takes concentrated, high-conviction positions in themes that will define the next decade — Electric Vehicles, Artificial Intelligence, Green Energy, Defence self-reliance, and Digital Infrastructure. Each theme is backed by policy tailwind, demographic shift, and capital cycle. We ride the wave before the crowd arrives.",
     holdings: ['EV & Auto Transition','AI & Data Centers','Solar & Wind Energy','Defence PSUs','Digital Infrastructure','Semiconductors','Space & Deep Tech','Agri-Tech'],
     riskWidth: '60%',
     riskColor: 'linear-gradient(90deg, #8e44ad, #e74c3c)',
-    bestFor: '<strong>Forward-thinking investors</strong> who want to own India\'s future. Best for those with a 3â€“5 year horizon who can absorb short-term volatility for high long-term upside. Ideal as a satellite allocation (20â€“30% of total portfolio).',
+    bestFor: '<strong>Forward-thinking investors</strong> who want to own India\'s future. Best for those with a 3–5 year horizon who can absorb short-term volatility for high long-term upside. Ideal as a satellite allocation (20–30% of total portfolio).',
     cta: 'Register Now'
   },
   aggressive: {
-    badge: 'High Risk Â· High Reward',
+    badge: 'High Risk · High Reward',
     title: 'Aggressive Portfolio',
-    tagline: 'Maximum Capital Growth â€” No Compromises',
-    irr: '30â€“40%',
-    min: 'â‚¹3,00,000',
+    tagline: 'Maximum Capital Growth — No Compromises',
+    irr: '30–40%',
+    min: '₹3,00,000',
     rebalance: 'Active',
     horizon: '5+ Years',
-    strategy: 'Built for investors who understand that true wealth is built in small and micro-caps before the institutions arrive. We hunt turnaround stories, hidden compounders, and momentum plays with asymmetric upside. Active monitoring every day. No passive holding â€” if a thesis breaks, we exit. Maximum growth, maximum discipline. Not for the faint-hearted.',
+    strategy: 'Built for investors who understand that true wealth is built in small and micro-caps before the institutions arrive. We hunt turnaround stories, hidden compounders, and momentum plays with asymmetric upside. Active monitoring every day. No passive holding — if a thesis breaks, we exit. Maximum growth, maximum discipline. Not for the faint-hearted.',
     holdings: ['Small-cap Compounders','Micro-cap Turnarounds','Momentum Breakouts','Operator-driven Stocks','IPO Plays','Commodity Cyclicals','Midcap Special Sits'],
     riskWidth: '88%',
     riskColor: 'linear-gradient(90deg, #e74c3c, #c0392b)',
-    bestFor: '<strong>Young, growth-oriented investors</strong> with a 5+ year horizon and the emotional discipline to hold through volatility. Maximum 20â€“25% of total portfolio allocation recommended. <strong>Capital loss risk is real â€” invest only what you can afford to grow aggressively.</strong>',
+    bestFor: '<strong>Young, growth-oriented investors</strong> with a 5+ year horizon and the emotional discipline to hold through volatility. Maximum 20–25% of total portfolio allocation recommended. <strong>Capital loss risk is real — invest only what you can afford to grow aggressively.</strong>',
     cta: 'Register Now'
   },
   conservative: {
-    badge: 'Capital Safe Â· Steady',
+    badge: 'Capital Safe · Steady',
     title: 'Conservative Portfolio',
     tagline: 'Preserve First, Grow Second',
-    irr: '10â€“14%',
-    min: 'â‚¹2,00,000',
+    irr: '10–14%',
+    min: '₹2,00,000',
     rebalance: 'Semi-Annual',
-    horizon: '2â€“4 Years',
-    strategy: 'Safety without sacrificing growth. This portfolio combines India\'s finest bluechip equities with high-quality bonds and dividend-generating instruments. We prioritise capital preservation above all â€” every holding must pass a strict downside-protection filter. Designed to sleep soundly at night while your wealth grows quietly and consistently.',
+    horizon: '2–4 Years',
+    strategy: 'Safety without sacrificing growth. This portfolio combines India\'s finest bluechip equities with high-quality bonds and dividend-generating instruments. We prioritise capital preservation above all — every holding must pass a strict downside-protection filter. Designed to sleep soundly at night while your wealth grows quietly and consistently.',
     holdings: ['Nifty 50 Bluechips','Government Bonds (G-Sec)','AAA Corporate Bonds','High-Dividend PSUs','Debt Mutual Funds','Gold ETF (Hedge)','Defensive FMCG'],
     riskWidth: '20%',
     riskColor: 'linear-gradient(90deg, #2ecc71, #27ae60)',
-    bestFor: '<strong>Retirees, senior citizens</strong>, and conservative investors who need predictable, stable income without sleepless nights. Also ideal as the <strong>core holding (60â€“70%)</strong> in a diversified portfolio for any age group.',
+    bestFor: '<strong>Retirees, senior citizens</strong>, and conservative investors who need predictable, stable income without sleepless nights. Also ideal as the <strong>core holding (60–70%)</strong> in a diversified portfolio for any age group.',
     cta: 'Register Now'
   }
 };
@@ -1570,9 +1570,9 @@ function closePfModalOnBg(e) {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePortfolioModal(); });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// ILLUSTRATIVE NEWS PANEL â€” WhiteFlows reference commentary
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════
+// ILLUSTRATIVE NEWS PANEL — WhiteFlows reference commentary
+// ══════════════════════════════════════════════════════════
 (function(){
   const NEWS_POOL = [
     { source:'WhiteFlows Desk', sentiment:'sent-neutral', label:'Theme', headline:'Macro positioning should be reviewed alongside rates, liquidity, and earnings breadth.', age:1 },
@@ -1640,7 +1640,7 @@ let _currentPortfolioLabel = 'Portfolio';
         card.classList.remove('vault-verifying');
         card.classList.add('uploaded');
         
-        status.innerHTML = '<span class="vault-secure-tick">[âœ”]</span> ' + file.name.substring(0, 15) + (file.name.length > 15 ? '...' : '') + ' <small style="opacity:0.6; font-size:9px;">SECURE</small>';
+        status.innerHTML = '<span class="vault-secure-tick">[✔]</span> ' + file.name.substring(0, 15) + (file.name.length > 15 ? '...' : '') + ' <small style="opacity:0.6; font-size:9px;">SECURE</small>';
         
         if (file.type.startsWith('image/')) {
           prev.src = e.target.result;
@@ -1990,7 +1990,7 @@ let _currentPortfolioLabel = 'Portfolio';
       return;
     }
 
-    // âœ… P0: Enforce ALL 5 file uploads are mandatory
+    // ✅ P0: Enforce ALL 5 file uploads are mandatory
     var requiredDocs = ['doc_aadhar', 'doc_pan', 'doc_cheque', 'doc_sign', 'doc_selfie'];
     var missingDocs = [];
     
@@ -2046,7 +2046,7 @@ let _currentPortfolioLabel = 'Portfolio';
 
     _setBtnState(true);
 
-    /* â”€â”€ Try EmailJS first (works from file:// AND from server) â”€â”€ */
+    /* ── Try EmailJS first (works from file:// AND from server) ── */
     var cfg = window._EJSCONFIG;
     if (cfg && cfg.ready) {
       var templateParams = {
@@ -2072,7 +2072,7 @@ let _currentPortfolioLabel = 'Portfolio';
         .catch(function(err) {
           _setBtnState(false);
           console.error('EmailJS error:', err);
-          showSecurityModal('Connection Error', 'Could not send automatically â€” please email us at whiteflowsint@gmail.com');
+          showSecurityModal('Connection Error', 'Could not send automatically — please email us at whiteflowsint@gmail.com');
         });
       return;
     }
@@ -2112,7 +2112,7 @@ let _currentPortfolioLabel = 'Portfolio';
         doc.text(doc.splitTextToSize(ft,190),10,y+20);
         doc.setDrawColor(GOLD[0],GOLD[1],GOLD[2]); doc.line(10,280,200,280);
         doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(GOLD[0],GOLD[1],GOLD[2]);
-        doc.text('WHITEFLOWS INTERNATIONAL â€” INVESTMENT ADVISORY',105,286,{align:'center'});
+        doc.text('WHITEFLOWS INTERNATIONAL — INVESTMENT ADVISORY',105,286,{align:'center'});
         pdf_base64 = doc.output('datauristring');
       }
     } catch(pdfErr) { console.warn('PDF gen (non-critical):',pdfErr); }
@@ -2152,7 +2152,7 @@ let _currentPortfolioLabel = 'Portfolio';
 
   
   /* 
-     â•â• OCEAN ECOSYSTEM FORM LOGIC â•â•
+     ══ OCEAN ECOSYSTEM FORM LOGIC ══
   */
   document.addEventListener('DOMContentLoaded', function() {
     const oceanForm = document.getElementById('oceanInvestorForm');
@@ -2162,7 +2162,7 @@ let _currentPortfolioLabel = 'Portfolio';
     const submitBtn = document.getElementById('oceanSubmitBtn');
 
     // Range Logic
-    const ranges = ['â‚¹ 5-10 L', 'â‚¹ 10-25 L', 'â‚¹ 25-50 L', 'â‚¹ 50 L - 1 Cr', 'â‚¹ 1 Cr - 5 Cr', 'â‚¹ 5 Cr+'];
+    const ranges = ['₹ 5-10 L', '₹ 10-25 L', '₹ 25-50 L', '₹ 50 L - 1 Cr', '₹ 1 Cr - 5 Cr', '₹ 5 Cr+'];
     if (rangeSlider && rangeLabel) {
       rangeSlider.addEventListener('input', (e) => {
         rangeLabel.textContent = ranges[e.target.value];

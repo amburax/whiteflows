@@ -50,7 +50,7 @@
   background: var(--pearl);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Dark mode: Services section fix Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Dark mode: Services section fix ── */
 [data-theme="dark"] .services {
   background: #0B1120 !important;
 }
@@ -94,18 +94,18 @@ body {
   text-rendering: optimizeSpeed;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PERFORMANCE: GPU-promote animated layers Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PERFORMANCE: GPU-promote animated layers ══ */
 .banner-slide { will-change: transform; contain: layout style; }
 .marquee-track { will-change: transform; }
 .carousel-progress { will-change: width; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PERFORMANCE: content-visibility for off-screen sections Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PERFORMANCE: content-visibility for off-screen sections ══ */
 .philosophy, .register, .footer-v2 {
   content-visibility: auto;
   contain-intrinsic-size: auto 800px;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â REDUCED MOTION Ã¢â‚¬â€ performance boost on low-end devices Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ REDUCED MOTION — performance boost on low-end devices ══ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -119,22 +119,22 @@ body {
 
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SCROLLBAR Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SCROLLBAR ══ */
 ::-webkit-scrollbar{ width:3px }
 ::-webkit-scrollbar-track{ background:var(--ivory) }
 ::-webkit-scrollbar-thumb{ background:var(--gold) }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+/* ══════════════════════════════════════
    EID FONT STYLE SYSTEM
    Based on: wide-tracked elegant serif uppercase
    like the "EID-E-MILAD" / "CELEBRATING THE BIRTH OF THE"
    typography from the reference image
-   Ã¢â€ â€™ Cinzel for all-caps display
-   Ã¢â€ â€™ Cormorant Garamond for body serif
-   Ã¢â€ â€™ Generous letter-spacing, refined weight
-Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+   → Cinzel for all-caps display
+   → Cormorant Garamond for body serif
+   → Generous letter-spacing, refined weight
+══════════════════════════════════════ */
 
-/* Display: like "EID-E-MILAD" Ã¢â‚¬â€ wide, elegant, serif caps */
+/* Display: like "EID-E-MILAD" — wide, elegant, serif caps */
 .eid-display {
   font-family: 'Cinzel', serif;
   font-weight: 400;
@@ -152,7 +152,7 @@ body {
   line-height: 1.5;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â INSTITUTIONAL DOCUMENT VAULT Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ INSTITUTIONAL DOCUMENT VAULT ══ */
 .vault-verifying {
   position: relative;
   overflow: hidden;
@@ -204,7 +204,7 @@ body {
   filter: drop-shadow(0 0 5px rgba(212,168,83,0.4));
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â MARKET TICKER Ã¢â‚¬â€ dark background Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ MARKET TICKER — dark background ══ */
 .market-ticker {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -225,7 +225,7 @@ body {
 .stock-ticker-bar:hover .ticker-track { animation-play-state: paused !important; }
 .marquee:hover .marquee-track { animation-play-state: paused !important; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â NAV Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ NAV ══ */
 nav {
   position:fixed; top:0; left:0; right:0; z-index:500;
   display:flex; align-items:center; justify-content:space-between;
@@ -244,7 +244,7 @@ nav::before {
   opacity:1;
   transition:opacity 0.35s ease;
 }
-/* Once user scrolls Ã¢â‚¬â€ solid ivory nav returns */
+/* Once user scrolls — solid ivory nav returns */
 nav.scrolled {
   padding:10px 40px;
   background:rgba(248,247,243,0.97);
@@ -263,14 +263,14 @@ nav.scrolled::before { opacity:0; }
 }
 .nav-logo img {
   height:47px; width:auto; display:block;
-  /* Default state: transparent hero Ã¢â‚¬â€ white logo, no pill */
+  /* Default state: transparent hero — white logo, no pill */
   background:transparent;
   padding:0;
   border-radius:3px;
   filter:brightness(0) invert(1);
   transition:background 0.4s, padding 0.4s, filter 0.4s;
 }
-/* On scroll: ivory nav Ã¢â‚¬â€ show logo in original colours, no white box */
+/* On scroll: ivory nav — show logo in original colours, no white box */
 nav.scrolled .nav-logo img {
   background:transparent;
   padding:0;
@@ -289,7 +289,7 @@ nav.scrolled .nav-logo img {
   transition:color 0.3s, text-shadow 0.3s;
   text-shadow:0 2px 18px rgba(0,0,0,0.32);
 }
-/* After scroll Ã¢â‚¬â€ links go back to ink */
+/* After scroll — links go back to ink */
 nav.scrolled .nav-links a { color:var(--ink); }
 .nav-links a::after {
   content:''; position:absolute; bottom:0; left:0;
@@ -312,7 +312,7 @@ nav.scrolled .nav-links a { color:var(--ink); }
 .nav-cta:hover { background:var(--gold); color:var(--ink); }
 nav.scrolled .nav-cta { border-color:var(--gold); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â THEME TOGGLE Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ THEME TOGGLE ══ */
 .theme-toggle {
   background: transparent;
   border: 1px solid rgba(212,168,83,0.4);
@@ -333,8 +333,8 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 [data-theme="dark"] .sun-icon { display: none; }
 [data-theme="dark"] .moon-icon { display: block !important; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â HERO Ã¢â€¢ÂÃ¢â€¢Â */
-/* Ã¢â€¢ÂÃ¢â€¢Â BANNER CAROUSEL Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ HERO ══ */
+/* ══ BANNER CAROUSEL ══ */
 .banner-carousel {
   position:relative;
   width:100%;
@@ -344,7 +344,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   background:var(--ivory);
 }
 
-/* Each slide Ã¢â‚¬â€ ALL absolutely positioned, filling full viewport */
+/* Each slide — ALL absolutely positioned, filling full viewport */
 .banner-slide {
   position:absolute;
   inset:0 -3px;
@@ -375,7 +375,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   z-index:1;
 }
 
-/* Watermark rings Ã¢â‚¬â€ each slide has its own */
+/* Watermark rings — each slide has its own */
 .banner-watermark {
   position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%);
@@ -439,13 +439,13 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 
 /* Slide-specific accent colours */
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SLIDE BACKGROUNDS Ã¢â‚¬â€ PHOTO BANNERS Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SLIDE BACKGROUNDS — PHOTO BANNERS ══ */
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Shared overlay technique Ã¢â€â‚¬Ã¢â€â‚¬
+/* ── Shared overlay technique ──
    background-image: overlay gradient ON TOP of photo
    This keeps text readable while showing the image                    */
 
-/* Slide 1 Ã¢â‚¬â€ AI Generated: Dark trading floor + gold/green candlesticks */
+/* Slide 1 — AI Generated: Dark trading floor + gold/green candlesticks */
 .banner-slide.s1 {
   background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('images/asset_5.webp') center/cover no-repeat !important;
 }
@@ -471,7 +471,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s1 .banner-cta::before{ background:#fff; }
 .banner-slide.s1 .banner-cta:hover  { color:var(--ink); }
 
-/* Slide 2 Ã¢â‚¬â€ AI Generated: Premium boardroom + London skyline dusk */
+/* Slide 2 — AI Generated: Premium boardroom + London skyline dusk */
 .banner-slide.s2 {
   background:
     linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)),
@@ -502,7 +502,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 
 .banner-slide.s3 {
   background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('images/asset_7.webp') center/cover no-repeat !important;
-  padding-top: 140px;  /* Extra padding Ã¢â‚¬â€ content-heavy slide needs more clearance from ticker+nav */
+  padding-top: 140px;  /* Extra padding — content-heavy slide needs more clearance from ticker+nav */
   justify-content: flex-start;  /* Start from top instead of center to prevent overlap */
 }
 .banner-slide.s3 .banner-headline   { color:var(--ivory); }
@@ -522,7 +522,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s3 .pf-tag            { color:var(--gold); }
 .banner-slide.s3 .pf-compare        { color:var(--ivory); }
 
-/* Slide 4 Ã¢â‚¬â€ AI Generated: Low-angle skyscrapers + gold light rays */
+/* Slide 4 — AI Generated: Low-angle skyscrapers + gold light rays */
 .banner-slide.s6 {
   background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('images/asset_8.webp') center/cover no-repeat !important;
 }
@@ -536,7 +536,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s6 .pf-tag             { color:#A0D2E7; }
 .banner-slide.s6 .pf-compare         { color:var(--ivory); }
 
-/* Slide 5 Ã¢â‚¬â€ AI Generated: Bioluminescent ocean + crescent moon + milky way */
+/* Slide 5 — AI Generated: Bioluminescent ocean + crescent moon + milky way */
 .banner-slide.s5 {
   background:
     linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.40)),
@@ -556,7 +556,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 }
 .banner-slide.s5 .banner-cta::before { background:rgba(248,247,243,0.9); }
 
-/* WA button Ã¢â‚¬â€ lighter green on all dark photo slides */
+/* WA button — lighter green on all dark photo slides */
 .banner-slide.s1 .hero-wa-btn,
 .banner-slide.s2 .hero-wa-btn,
 .banner-slide.s6 .hero-wa-btn,
@@ -565,7 +565,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   border-color:rgba(74,222,128,0.35);
 }
 
-/* Slide 5 Ocean Ã¢â‚¬â€ smaller headline + tighter spacing to fit all content */
+/* Slide 5 Ocean — smaller headline + tighter spacing to fit all content */
 .banner-slide.s5 .banner-headline {
   color:var(--ivory) !important;
   font-size:clamp(22px,3.8vw,52px);
@@ -666,7 +666,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s5 .banner-cta::before { background:#fff; }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â IMAGE SLIDES Ã¢â‚¬â€ full-viewport photo banners Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ IMAGE SLIDES — full-viewport photo banners ══ */
 .banner-slide.img-slide {
   background-size: cover !important;
   background-position: center center !important;
@@ -674,7 +674,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   padding: 0;
 }
 
-/* Thin gradient scrim at very bottom Ã¢â‚¬â€ just enough for button readability */
+/* Thin gradient scrim at very bottom — just enough for button readability */
 .banner-slide.img-slide::after {
   content: '';
   position: absolute;
@@ -684,12 +684,12 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   pointer-events: none;
   z-index: 1;
 }
-/* Light slides Ã¢â‚¬â€ white/ivory scrim at very bottom */
+/* Light slides — white/ivory scrim at very bottom */
 .banner-slide.img-slide.light-slide::after {
   background: linear-gradient(to top, rgba(248,247,243,0.78) 0%, rgba(248,247,243,0.3) 60%, transparent 100%);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SLIDE CTA BUTTONS Ã¢â‚¬â€ REDESIGNED Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SLIDE CTA BUTTONS — REDESIGNED ══ */
 /* Wrap anchored bottom-center */
 .banner-slide.img-slide .slide-cta-wrap {
   position: absolute;
@@ -735,8 +735,8 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 }
 .banner-slide.img-slide .slide-cta:hover::before { transform: translateX(0); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 1 Ã¢â‚¬â€ "Begin Your Journey"
-   Style: Solid rich gold, pill-shaped, strong shadow Ã¢â‚¬â€ premium feel */
+/* ── Slide 1 — "Begin Your Journey"
+   Style: Solid rich gold, pill-shaped, strong shadow — premium feel */
 .banner-slide.s1 .slide-cta {
   background: var(--gold);
   color: var(--ink);
@@ -750,8 +750,8 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s1 .slide-cta svg { stroke: var(--ink); }
 .banner-slide.s1 .slide-cta:hover svg { stroke: var(--ivory); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 2 Ã¢â‚¬â€ "Submit Your Proposal"
-   Style: White/ivory fill with gold border Ã¢â‚¬â€ clean, corporate trust */
+/* ── Slide 2 — "Submit Your Proposal"
+   Style: White/ivory fill with gold border — clean, corporate trust */
 .banner-slide.s2 .slide-cta {
   background: rgba(255,255,255,0.95);
   color: var(--ink);
@@ -765,8 +765,8 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s2 .slide-cta:hover { color: var(--ink); box-shadow: 0 8px 30px rgba(212,168,83,0.45); }
 .banner-slide.s2 .slide-cta svg { stroke: var(--ink); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 3 Ã¢â‚¬â€ "Explore Portfolios" (DARK slide)
-   Style: Glassy transparent with gold shimmer border Ã¢â‚¬â€ luxe dark feel */
+/* ── Slide 3 — "Explore Portfolios" (DARK slide)
+   Style: Glassy transparent with gold shimmer border — luxe dark feel */
 .banner-slide.s3 .slide-cta {
   background: rgba(212,168,83,0.12);
   color: var(--gold);
@@ -783,8 +783,8 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
 .banner-slide.s3 .slide-cta svg { stroke: var(--gold); }
 .banner-slide.s3 .slide-cta:hover svg { stroke: var(--ink); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 4 Ã¢â‚¬â€ "Apply for Funding"
-   Style: Deep charcoal with gold text Ã¢â‚¬â€ serious, finance authority */
+/* ── Slide 4 — "Apply for Funding"
+   Style: Deep charcoal with gold text — serious, finance authority */
 .banner-slide.s4 .slide-cta {
   background: rgba(14,13,11,0.88);
   color: var(--gold);
@@ -806,7 +806,7 @@ nav.scrolled .nav-cta { border-color:var(--gold); }
   .banner-slide.img-slide .slide-cta-wrap { bottom: 18px; }
 }
 
-/* Nav light-slide state Ã¢â‚¬â€ dark ink links, transparent background */
+/* Nav light-slide state — dark ink links, transparent background */
 nav.light-nav {
   background: transparent !important;
   border-bottom-color: transparent !important;
@@ -814,7 +814,7 @@ nav.light-nav {
 nav.light-nav .nav-links a { color: var(--ink) !important; text-shadow: none !important; }
 nav.light-nav .nav-logo img { filter: none !important; }
 
-/* Nav dark-slide state Ã¢â‚¬â€ white text, transparent background */
+/* Nav dark-slide state — white text, transparent background */
 nav.dark-nav {
   background: transparent !important;
   border-bottom-color: transparent !important;
@@ -822,7 +822,7 @@ nav.dark-nav {
 nav.dark-nav .nav-links a { color: rgba(248,247,243,0.9) !important; text-shadow: 0 1px 4px rgba(0,0,0,0.6) !important; }
 nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 
-/* Stats bar Ã¢â‚¬â€ only slide 1 */
+/* Stats bar — only slide 1 */
 .banner-stats {
   display:flex; gap:0;
   border-top:1px solid rgba(212,168,83,0.2);
@@ -868,7 +868,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   color:var(--gold);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â OCEAN ECOSYSTEM LAYOUT Ã¢â‚¬â€ Slide 5 Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ OCEAN ECOSYSTEM LAYOUT — Slide 5 ══ */
 .ocean-ecosystem {
   display: flex;
   align-items: stretch;
@@ -1091,7 +1091,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .ocean-connector-line.bottom::after { top: 50%; transform: translate(-50%,-50%); right: auto; left: auto; bottom: auto; right: 28%; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â BUTTONS Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ BUTTONS ══ */
 .btn-primary {
   display:inline-flex; align-items:center; gap:10px;
   padding:15px 44px;
@@ -1125,7 +1125,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â HERO DUAL CTA Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ HERO DUAL CTA ══ */
 .hero-cta-group {
   display:flex;
   align-items:stretch;
@@ -1139,7 +1139,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   margin-bottom:0;
   padding:14px 36px;
 }
-/* Secondary "Our Methodology" button Ã¢â‚¬â€ exact same height as banner-cta */
+/* Secondary "Our Methodology" button — exact same height as banner-cta */
 .hero-secondary-btn {
   display:inline-flex;
   align-items:center;
@@ -1175,7 +1175,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .hero-cta-group .banner-cta { padding:12px 20px; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â CAROUSEL CONTROLS Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ CAROUSEL CONTROLS ══ */
 .carousel-controls {
   position:absolute; bottom:36px; left:50%;
   transform:translateX(-50%);
@@ -1239,7 +1239,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   z-index:20;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â HERO STATS (kept for backward compat) Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ HERO STATS (kept for backward compat) ══ */
 .hero-stats {
   display:flex; gap:0; border-top:1px solid var(--smoke);
   border-bottom:1px solid var(--smoke);
@@ -1275,7 +1275,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .banner-stat-label { font-size:9px; letter-spacing:0.1em; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â MARQUEE Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ MARQUEE ══ */
 .marquee {
   background:var(--ink); padding:13px 0; overflow:hidden;
 }
@@ -1294,7 +1294,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 }
 @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SECTION SHARED Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SECTION SHARED ══ */
 .section-tag {
   font-family:'Raleway',sans-serif;
   font-size:11px; font-weight:800;
@@ -1307,7 +1307,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 .section-tag.center::before { display:none; }
 .section-tag.center::after { content:''; width:28px; height:1px; background:var(--gold); display:block; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PHILOSOPHY Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PHILOSOPHY ══ */
 .philosophy {
   padding:140px 80px;
   background:var(--white);
@@ -1366,7 +1366,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   font-size:14px; font-weight:400; line-height:1.8; color:var(--ink);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SERVICES Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SERVICES ══ */
 .services {
   padding:120px 80px;
   background:var(--ivory);
@@ -1385,7 +1385,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   color:var(--ash); letter-spacing:0.25em; text-transform:uppercase;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Grid layout Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Grid layout ── */
 .services-grid {
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -1394,7 +1394,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   max-width:1280px; margin:0 auto;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Base card Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Base card ── */
 .svc {
   position:relative;
   padding:40px 36px 36px;
@@ -1422,7 +1422,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   transform:translateY(-3px);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Large "feature" card Ã¢â‚¬â€ spans 2 cols Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Large "feature" card — spans 2 cols ── */
 .svc.svc-featured {
   grid-column:span 2;
   display:grid;
@@ -1435,7 +1435,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 .svc.svc-featured .svc-featured-left  { padding-right:10px; }
 .svc.svc-featured .svc-featured-right { padding-top:4px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Roman numeral Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Roman numeral ── */
 .svc-roman {
   font-family:'Cormorant Garamond',serif;
   font-size:11px; font-weight:600;
@@ -1447,7 +1447,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 }
 .svc:hover .svc-roman { color:var(--gold); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Service name Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Service name ── */
 .svc-name {
   font-family:'Cinzel',serif;
   font-size:14px; font-weight:700;
@@ -1457,7 +1457,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   line-height:1.4;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Gold rule under name Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Gold rule under name ── */
 .svc-rule {
   width:32px; height:1px;
   background:rgba(212,168,83,0.3);
@@ -1466,7 +1466,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 }
 .svc:hover .svc-rule { width:56px; background:var(--gold); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Description Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Description ── */
 .svc-desc {
   font-family:'Raleway',sans-serif;
   font-size:13px; font-weight:400;
@@ -1474,7 +1474,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   margin-bottom:24px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Link Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Link ── */
 .svc-link {
   font-family:'Cinzel',serif;
   font-size:9px; font-weight:700;
@@ -1485,7 +1485,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 }
 .svc:hover .svc-link { gap:12px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Responsive Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Responsive ── */
 @media(max-width:1100px){
   .services-grid { grid-template-columns:repeat(2,1fr); }
   .svc.svc-featured { grid-column:span 2; }
@@ -1500,7 +1500,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .svc.svc-featured .svc-featured-right { padding-top:0; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â REGISTRATION & CONSULTATION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ REGISTRATION & CONSULTATION ══ */
 .register {
   padding: 140px 80px;
   background: var(--ivory);
@@ -1630,7 +1630,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   margin-top:14px; line-height:1.8;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â Ticker track animation Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ Ticker track animation ══ */
 @keyframes tickerScroll {
   0%   { transform:translateX(0); }
   100% { transform:translateX(-50%); }
@@ -1676,7 +1676,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   align-items:center;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PORTFOLIO COMPARE (Slide 3) Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PORTFOLIO COMPARE (Slide 3) ══ */
 .pf-compare {
   display:grid;
   grid-template-columns:1fr 48px 1fr;
@@ -1736,7 +1736,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   max-width:340px;
 }
 
-/* Tags Ã¢â‚¬â€ no borders, just spaced text */
+/* Tags — no borders, just spaced text */
 .pf-col-tags {
   display:flex; flex-direction:column;
   gap:8px;
@@ -1805,7 +1805,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .pf-divider-diamond { margin:0 12px; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â TESTIMONIALS Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ TESTIMONIALS ══ */
 .testimonials {
   padding:120px 80px;
   background:var(--ivory);
@@ -1830,7 +1830,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   color:var(--silver);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Carousel track Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Carousel track ── */
 .testi-track-wrap {
   position:relative;
   max-width:1280px;
@@ -1844,7 +1844,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   will-change:transform;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Individual card Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Individual card ── */
 .testi-card {
   flex:0 0 calc(33.333% - 19px);
   background:var(--white);
@@ -1917,7 +1917,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   color:var(--gold);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Navigation dots Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Navigation dots ── */
 .testi-nav {
   display:flex; align-items:center;
   justify-content:center;
@@ -1936,7 +1936,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   width:24px; border-radius:4px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Responsive Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Responsive ── */
 @media(max-width:1024px){
   .testimonials { padding:80px 32px; }
   .testi-card { flex:0 0 calc(50% - 14px); }
@@ -1946,7 +1946,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .testi-card { flex:0 0 100%; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PORTFOLIO SECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PORTFOLIO SECTION ══ */
 .portfolio-section {
   padding:110px 80px;
   background:var(--pearl);
@@ -2056,7 +2056,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   gap:10px;
 }
 .pf-features li::before {
-  content:'Ã¢Å“â€œ';
+  content:'✓';
   color:var(--gold);
   font-weight:800;
 }
@@ -2086,7 +2086,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .pf-stat-val { font-size:22px; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â INVESTOR SECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ INVESTOR SECTION ══ */
 .investor-section {
   padding:120px 80px;
   background:var(--white);
@@ -2144,7 +2144,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â OCEAN ECOSYSTEM SECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ OCEAN ECOSYSTEM SECTION ══ */
 .ocean-section {
   padding: 120px 80px;
   background: linear-gradient(135deg, #0a0a0a 0%, #0d1b2a 100%);
@@ -2176,7 +2176,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   line-height: 1.8;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â OCEAN FORM Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ OCEAN FORM ══ */
 .ocean-form-card {
   max-width: 1000px;
   margin: 0 auto;
@@ -2191,7 +2191,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   box-shadow: 0 40px 100px rgba(0,0,0,0.5);
 }
 .ocean-form-card::after {
-  content: 'Whale Ã¢â‚¬Â¢ Penguin';
+  content: 'Whale • Penguin';
   position: absolute;
   top: 20px; right: 30px;
   font-family: 'Cinzel', serif;
@@ -2241,7 +2241,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â INVESTMENT SELECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ INVESTMENT SELECTION ══ */
 .ocean-select-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2272,7 +2272,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   border-color: var(--gold);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â RANGE SLIDER Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ RANGE SLIDER ══ */
 .ocean-range-wrap { margin-top: 16px; }
 .ocean-range-header {
   display: flex;
@@ -2349,7 +2349,7 @@ nav.dark-nav .nav-logo img { filter: brightness(0) invert(1) !important; }
   .ocean-section { padding: 80px 20px; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â FOOTER Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ FOOTER ══ */
 
 footer {
   background:var(--footer-bg);
@@ -2405,7 +2405,7 @@ footer {
   text-transform:uppercase; color:var(--gold);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â REVEAL ANIMATION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ REVEAL ANIMATION ══ */
 .reveal {
   opacity:0; transform:translateY(28px);
   transition:opacity 0.85s ease, transform 0.85s ease;
@@ -2413,7 +2413,7 @@ footer {
 .reveal.up { opacity:1; transform:translateY(0); }
 .d1{transition-delay:0.1s} .d2{transition-delay:0.2s} .d3{transition-delay:0.3s} .d4{transition-delay:0.4s}
 
-/* Ã¢â€¢ÂÃ¢â€¢Â RESPONSIVE Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ RESPONSIVE ══ */
 @media(max-width:1024px){
   nav { padding:16px 28px; }
   .nav-links { display:none; }
@@ -2433,11 +2433,11 @@ footer {
 }
 @media(max-width:640px){
   .services-grid { grid-template-columns:1fr; }
-  /* News Ã¢â‚¬â€ snapshot FIRST on mobile, news feed second */
+  /* News — snapshot FIRST on mobile, news feed second */
   .news-grid { grid-template-columns:1fr; }
   .news-right-col  { order:-1; }
   .news-feed-panel { order:1; }
-  /* Footer Ã¢â‚¬â€ single column on mobile */
+  /* Footer — single column on mobile */
   footer { padding:48px 20px 24px; }
   .footer-grid {
     grid-template-columns:1fr;
@@ -2466,7 +2466,7 @@ footer {
   .investor-inner { padding:60px 20px; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â HAMBURGER MENU Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ HAMBURGER MENU ══ */
 .hamburger {
   display:none;
   flex-direction:column;
@@ -2517,7 +2517,7 @@ nav:not(.scrolled) .hamburger span {
 }
 .nav-mobile-overlay.open { display:block; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â MOBILE NAV DRAWER Ã¢â‚¬â€ DEFINITIVE DARK THEME Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ MOBILE NAV DRAWER — DEFINITIVE DARK THEME ══ */
 
 /* === KEYFRAME === */
 @keyframes slideInRight {
@@ -2592,7 +2592,7 @@ nav:not(.scrolled) .hamburger span {
 
 
 /* =============================================
-   MOBILE FINAL FIX Ã¢â‚¬â€ Based on live screenshots
+   MOBILE FINAL FIX — Based on live screenshots
    ============================================= */
 
 /* Hide BEGIN button on all mobile/tablet */
@@ -2600,10 +2600,10 @@ nav:not(.scrolled) .hamburger span {
   .nav-cta { display:none !important; }
 }
 
-/* Phone-specific fixes (Ã¢â€°Â¤768px) */
+/* Phone-specific fixes (≤768px) */
 @media(max-width:768px){
 
-  /* Nav Ã¢â‚¬â€ transparent on hero, ivory on scroll (matches desktop) */
+  /* Nav — transparent on hero, ivory on scroll (matches desktop) */
   nav {
     background:transparent !important;
     border-bottom:1px solid transparent !important;
@@ -2615,7 +2615,7 @@ nav:not(.scrolled) .hamburger span {
     backdrop-filter:blur(20px) !important;
   }
 
-  /* Logo Ã¢â‚¬â€ white on hero (transparent nav), original on scrolled (ivory nav) */
+  /* Logo — white on hero (transparent nav), original on scrolled (ivory nav) */
   nav:not(.scrolled) .nav-logo img {
     filter:brightness(0) invert(1) !important;
     background:transparent !important;
@@ -2627,7 +2627,7 @@ nav:not(.scrolled) .hamburger span {
     padding:0 !important;
   }
 
-  /* Slides Ã¢â‚¬â€ enough top padding to clear nav */
+  /* Slides — enough top padding to clear nav */
   .banner-slide {
     padding-top:110px !important;
     padding-left:18px !important;
@@ -2635,20 +2635,20 @@ nav:not(.scrolled) .hamburger span {
     justify-content:center !important;
   }
 
-  /* Headline Ã¢â‚¬â€ readable size on phone */
+  /* Headline — readable size on phone */
   .banner-headline {
     font-size:clamp(24px,7.5vw,40px) !important;
     margin-bottom:14px !important;
   }
 
-  /* Sub text Ã¢â‚¬â€ tighter */
+  /* Sub text — tighter */
   .banner-sub {
     font-size:14px !important;
     line-height:1.65 !important;
     margin-bottom:24px !important;
   }
 
-  /* Chips Ã¢â‚¬â€ wrap nicely */
+  /* Chips — wrap nicely */
   .banner-chips {
     gap:8px !important;
     margin-bottom:24px !important;
@@ -2658,7 +2658,7 @@ nav:not(.scrolled) .hamburger span {
     padding:6px 12px !important;
   }
 
-  /* CTA button Ã¢â‚¬â€ full width on phone */
+  /* CTA button — full width on phone */
   .hero-cta-group {
     flex-direction:column !important;
     width:100% !important;
@@ -2674,7 +2674,7 @@ nav:not(.scrolled) .hamburger span {
     font-size:10px !important;
   }
 
-  /* Stats bar Ã¢â‚¬â€ compressed for phone */
+  /* Stats bar — compressed for phone */
   .banner-stats {
     max-width:100% !important;
   }
@@ -2691,7 +2691,7 @@ nav:not(.scrolled) .hamburger span {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SEND CHOICE MODAL Ã¢â‚¬â€ DARK PREMIUM Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SEND CHOICE MODAL — DARK PREMIUM ══ */
 .send-modal-overlay {
   display:none;
   position:fixed; inset:0;
@@ -2870,7 +2870,7 @@ nav:not(.scrolled) .hamburger span {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â COOKIE CONSENT BANNER Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ COOKIE CONSENT BANNER ══ */
 .cookie-bar {
   position:fixed;
   bottom:0; left:0; right:0;
@@ -2948,7 +2948,7 @@ nav:not(.scrolled) .hamburger span {
   .cookie-btns { width:100%; justify-content:flex-end; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SCROLL TO TOP Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SCROLL TO TOP ══ */
 .scroll-top {
   position:fixed;
   bottom:96px; right:28px;
@@ -2973,7 +2973,7 @@ nav:not(.scrolled) .hamburger span {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â THANK YOU SCREEN Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ THANK YOU SCREEN ══ */
 .form-success {
   display:none;
   flex-direction:column;
@@ -3039,7 +3039,7 @@ nav:not(.scrolled) .hamburger span {
 .success-back:hover { color:rgba(248,247,243,0.5); }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SLIDE 3 Ã¢â‚¬â€ PORTFOLIO COMPARE OVERRIDES Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SLIDE 3 — PORTFOLIO COMPARE OVERRIDES ══ */
 
 /* Push content down to clear ticker + navbar */
 .banner-slide.s3 .banner-content {
@@ -3089,7 +3089,7 @@ nav:not(.scrolled) .hamburger span {
   color:rgba(248,247,243,0.55) !important;
 }
 
-/* Mobile Ã¢â‚¬â€ smaller title, tighter padding */
+/* Mobile — smaller title, tighter padding */
 @media(max-width:768px){
   .banner-slide.s3 .pf-col-label {
     font-size:22px !important;
@@ -3160,7 +3160,7 @@ nav:not(.scrolled) .hamburger span {
   color:rgba(248,247,243,0.6) !important;
 }
 
-/* Mobile Ã¢â‚¬â€ smaller title, tighter padding */
+/* Mobile — smaller title, tighter padding */
 @media(max-width:768px){
   .banner-slide.s6 .pf-col-label {
     font-size:22px !important;
@@ -3173,9 +3173,9 @@ nav:not(.scrolled) .hamburger span {
   }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â ACTIVE NAV LINK ON SCROLL Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ ACTIVE NAV LINK ON SCROLL ══ */
 
-/* Base active state Ã¢â‚¬â€ works on scrolled (ivory) nav */
+/* Base active state — works on scrolled (ivory) nav */
 .nav-links a.nav-active,
 nav.scrolled .nav-links a.nav-active {
   color:var(--gold) !important;
@@ -3188,7 +3188,7 @@ nav.scrolled .nav-links a.nav-active::after {
   background:var(--gold) !important;
 }
 
-/* On hero (transparent dark nav) Ã¢â‚¬â€ bright white + gold underline
+/* On hero (transparent dark nav) — bright white + gold underline
    Gold on dark is invisible, use bright white text + gold underline */
 nav:not(.scrolled) .nav-links a.nav-active {
   color:#ffffff !important;
@@ -3200,7 +3200,7 @@ nav:not(.scrolled) .nav-links a.nav-active::after {
   background:var(--gold) !important;
 }
 
-/* Hover Ã¢â‚¬â€ non-active links slightly brighter on hover */
+/* Hover — non-active links slightly brighter on hover */
 nav:not(.scrolled) .nav-links a:hover {
   color:#ffffff !important;
   opacity:1 !important;
@@ -3210,7 +3210,7 @@ nav.scrolled .nav-links a:hover {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â LIVE STOCK TICKER BAR Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ LIVE STOCK TICKER BAR ══ */
 .stock-ticker-bar {
   width:100%; height:46px;
   background:var(--ink);
@@ -3301,7 +3301,7 @@ nav.scrolled .nav-links a:hover {
 .stock-ticker-bar .ticker-item:last-child { border-right:none !important; }
 .stock-ticker-bar .ticker-time { border-left:1.5px solid #141b26 !important; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â NEWS SECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ NEWS SECTION ══ */
 .news-section {
   padding:110px 80px;
   background:var(--pearl);
@@ -3416,7 +3416,7 @@ nav.scrolled .nav-links a:hover {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PORTFOLIO SECTION Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ PORTFOLIO SECTION ══ */
 .portfolio-section {
   padding:120px 80px;
   background:var(--white);
@@ -3526,7 +3526,7 @@ nav.scrolled .nav-links a:hover {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SLIDE 5 Ã¢â‚¬â€ DUAL CTA (Whale + Penguin) Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SLIDE 5 — DUAL CTA (Whale + Penguin) ══ */
 .s5-dual-cta {
   display: flex !important;
   flex-direction: row;
@@ -3534,7 +3534,7 @@ nav.scrolled .nav-links a:hover {
   align-items: center;
   justify-content: center;
 }
-/* S5 btn row Ã¢â‚¬â€ centered, just above bottom image labels */
+/* S5 btn row — centered, just above bottom image labels */
 .s5-btn-row {
   position: absolute;
   bottom: 80px;
@@ -3556,7 +3556,7 @@ nav.scrolled .nav-links a:hover {
 @media(max-width:640px){
   .s5-btn-row { flex-direction:column; align-items:center; gap:10px; bottom:60px; padding:0 20px; }
 }
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 5 Whale btn Ã¢â‚¬â€ deep navy, ultra-premium feel */
+/* ── Slide 5 Whale btn — deep navy, ultra-premium feel */
 .slide-cta-whale {
   background: rgba(10,24,55,0.90) !important;
   border: 1.5px solid rgba(100,160,255,0.50) !important;
@@ -3575,7 +3575,7 @@ nav.scrolled .nav-links a:hover {
 }
 .slide-cta-whale:hover svg { stroke: #fff !important; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide 5 Penguin btn Ã¢â‚¬â€ teal-ocean, energetic contrast */
+/* ── Slide 5 Penguin btn — teal-ocean, energetic contrast */
 .slide-cta-penguin {
   background: rgba(255,255,255,0.92) !important;
   border: 1.5px solid rgba(0,160,140,0.55) !important;
@@ -3605,7 +3605,7 @@ nav.scrolled .nav-links a:hover {
   transform: translateY(-120px) !important;
 }
 
-/* ===== REGISTRATION MODAL Ã¢â‚¬â€ WhiteFlows Premium =====*/
+/* ===== REGISTRATION MODAL — WhiteFlows Premium =====*/
 
   .reg-overlay {
     position:fixed;inset:0;background:rgba(4,8,14,0.82);
@@ -3699,7 +3699,7 @@ nav.scrolled .nav-links a:hover {
   }
   .reg-step-dot.done{background:rgba(212,168,83,0.18);border-color:rgba(212,168,83,0.6);color:transparent;}
   .reg-step-dot.done::after{
-    content:'Ã¢Å“â€œ';position:absolute;inset:0;
+    content:'✓';position:absolute;inset:0;
     display:flex;align-items:center;justify-content:center;
     color:var(--gold);font-family:sans-serif;font-size:14px;font-weight:700;
   }
@@ -3768,7 +3768,7 @@ nav.scrolled .nav-links a:hover {
   }
   .reg-phone-container input{flex:1;}
 
-  /* Upload Cards Ã¢â‚¬â€ Vault Style */
+  /* Upload Cards — Vault Style */
   .reg-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 6px;}
   @media(max-width:600px){.reg-upload-grid{grid-template-columns:repeat(2,1fr);}}
   .reg-upload-card{
@@ -3969,7 +3969,7 @@ nav.scrolled .nav-links a:hover {
     .reg-step-label-item{font-size:7px;}
   }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Overlay Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* ── Overlay ── */
 .pf-modal-overlay {
     position: fixed; inset: 0; z-index: 9000;
     background: rgba(20,18,16,0.6);
@@ -4239,7 +4239,7 @@ nav.scrolled .nav-links a:hover {
   .wa-icon { margin-right: 0; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â SECURITY WARNING MODAL Ã¢â€¢ÂÃ¢â€¢Â */
+/* ══ SECURITY WARNING MODAL ══ */
 .sec-modal-overlay {
   position: fixed; inset: 0; background: rgba(14,13,11,0.85);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
