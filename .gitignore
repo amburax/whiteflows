@@ -27,3 +27,7 @@ Thumbs.db
 
 # Large binaries (not needed for deployment)
 *.docx
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
